@@ -15,6 +15,7 @@ public class Datum implements HasMetrics {
     private List<Integer> contextualDiscreteAttributes;
     private RealVector contextualDoubleAttributes;
     
+    private Datum parentDatum; //the parent datum this datum is created from 
     
     public Datum() {
     }
@@ -24,6 +25,7 @@ public class Datum implements HasMetrics {
     }
 
     public Datum(Datum oldDatum, RealVector metrics) {
+    	this.parentDatum = oldDatum;
         this.metrics = metrics;
         this.attributes = oldDatum.getAttributes();
         this.contextualDiscreteAttributes = oldDatum.getContextualDiscreteAttributes();
@@ -63,6 +65,9 @@ public class Datum implements HasMetrics {
         this.auxiliaries = auxiliaries;
     }
 
+    public Datum getParentDatum(){
+    	return parentDatum;
+    }
     public String toString() {
         return String.format(
                 "metrics: %s, encoded attributes: %s, auxiliaries: %s",

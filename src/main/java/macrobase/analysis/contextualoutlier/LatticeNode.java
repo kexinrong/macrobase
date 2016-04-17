@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import macrobase.datamodel.Datum;
+
 public class LatticeNode {
 
 	/**
@@ -37,7 +39,7 @@ public class LatticeNode {
 	}
 	
 	
-	public LatticeNode join(LatticeNode other, int total, double tau){
+	public LatticeNode join(LatticeNode other, List<Datum> data, double tau){
 		List<Integer> newDimensions = joinedDimensions(other);
 		
 		if(newDimensions == null)
@@ -47,18 +49,12 @@ public class LatticeNode {
 		LatticeNode result = new LatticeNode(newDimensions);
 		for(Context u1: getDenseContexts()){
 			for(Context u2: other.getDenseContexts()){
-				Context newUnit = u1.join(u2);
-				if(newUnit == null)
-					continue;
-				if(newUnit.isDense(total, tau)){
+				Context newUnit = u1.join(u2, data, tau);
+				if(newUnit != null)
 					result.addDenseContext(newUnit);
-				}
 			}
 		}
 		
-		//only interested in SubSpace that contains dense units
-		if(result.denseContexts == null || result.denseContexts.size() == 0)
-			return null;
 		return result;
 	}
 	/**
@@ -134,5 +130,10 @@ public class LatticeNode {
 			return 0;
 
 		}
+	}
+	
+	public void clear(){
+		dimensions.clear();
+		denseContexts.clear();
 	}
 }

@@ -10,6 +10,7 @@ import java.util.Iterator;
 public class StaticThresholdClassifier extends OutlierClassifier {
 
     private Double threshold;
+    //Xu: why need thresholdSquared?
     private Double thresholdSquared;
 
     public StaticThresholdClassifier(MacroBaseConf conf, Iterator<Datum> input) {
@@ -26,6 +27,6 @@ public class StaticThresholdClassifier extends OutlierClassifier {
     @Override
     public OutlierClassificationResult next() {
         Datum nextInput = input.next();
-        return new OutlierClassificationResult(nextInput, thresholdSquared > nextInput.getMetrics().getNorm());
+        return new OutlierClassificationResult(nextInput,   nextInput.getMetrics().getNorm() > threshold);
     }
 }

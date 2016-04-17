@@ -13,23 +13,35 @@ public class BatchScoreFeatureTransform extends BatchTransform {
     protected BatchTrainScore batchTrainScore;
     protected MacroBaseConf conf;
 
+    protected boolean requiresTraining;
+    
     public BatchScoreFeatureTransform(MacroBaseConf conf, Iterator<Datum> input, MacroBaseConf.TransformType transformType)
             throws ConfigurationException {
         super(input);
         this.batchTrainScore = conf.constructTransform(transformType);
         this.conf = conf;
+        this.requiresTraining = true;
     }
 
     public BatchScoreFeatureTransform(MacroBaseConf conf, Iterator<Datum> input) throws ConfigurationException {
         this(conf, input, conf.getTransformType());
     }
+    
+    public BatchScoreFeatureTransform(MacroBaseConf conf, Iterator<Datum> input, BatchTrainScore batchTrainScore, boolean requiresTraining){
+    	super(input);
+    	this.conf = conf;
+    	this.batchTrainScore = batchTrainScore;
+    	this.requiresTraining = requiresTraining;
+    }
 
     @Override
     protected List<Datum> transform(List<Datum> data) {
-        batchTrainScore.train(data);
+    	if(requiresTraining)
+    		batchTrainScore.train(data);
         List<Datum> results = new ArrayList<>(data.size());
         for(Datum d : data) {
-            results.add(new Datum(d, batchTrainScore.score(d)));
+        	double score = batchTrainScore.score(d);
+            results.add(new Datum(d, score));
         }
         return results;
     }

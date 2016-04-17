@@ -23,21 +23,20 @@ public abstract class AbstractPipeline implements Iterator<AnalysisResult> {
     protected final Boolean forceUseZScore;
     protected final DataIngesterType dataIngesterType;
     protected final TransformType transformType;
-    protected final Double contextualDenseContextTau;
     protected final Double minOIRatio;
     protected final Double minSupport;
     protected final Double targetPercentile;
     protected final Double zScore;
-    protected final Integer contextualNumIntervals;
     protected final List<String> attributes;
-    protected final List<String> contextualDiscreteAttributes;
-    protected final List<String> contextualDoubleAttributes;
     protected final List<String> highMetrics;
     protected final List<String> lowMetrics;
     protected final MacroBaseConf conf;
     protected final String queryName;
     protected final String storeAnalysisResults;
+    
+    //the following are contextual outlier parameters
     protected final boolean contextualEnabled;
+    protected final String contextualAPI;
 
     public AbstractPipeline(MacroBaseConf conf) throws ConfigurationException {
         this.conf = conf;
@@ -62,10 +61,8 @@ public abstract class AbstractPipeline implements Iterator<AnalysisResult> {
         storeAnalysisResults = conf.getString(MacroBaseConf.STORE_ANALYSIS_RESULTS, MacroBaseDefaults.STORE_ANALYSIS_RESULTS);
 
         contextualEnabled = conf.getBoolean(MacroBaseConf.CONTEXTUAL_ENABLED, MacroBaseDefaults.CONTEXTUAL_ENABLED);
-        contextualDiscreteAttributes = conf.getStringList(MacroBaseConf.CONTEXTUAL_DISCRETE_ATTRIBUTES,MacroBaseDefaults.CONTEXTUAL_DISCRETE_ATTRIBUTES);
-        contextualDoubleAttributes = conf.getStringList(MacroBaseConf.CONTEXTUAL_DOUBLE_ATTRIBUTES,MacroBaseDefaults.CONTEXTUAL_DOUBLE_ATTRIBUTES);
-        contextualDenseContextTau = conf.getDouble(MacroBaseConf.CONTEXTUAL_DENSECONTEXTTAU, MacroBaseDefaults.CONTEXTUAL_DENSECONTEXTTAU);
-        contextualNumIntervals = conf.getInt(MacroBaseConf.CONTEXTUAL_NUMINTERVALS, MacroBaseDefaults.CONTEXTUAL_NUMINTERVALS);
+        contextualAPI = conf.getString(MacroBaseConf.CONTEXTUAL_API,MacroBaseDefaults.CONTEXTUAL_API);
+
     }
 
     @Override

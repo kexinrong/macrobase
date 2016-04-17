@@ -74,10 +74,15 @@ public class MacroBaseConf extends Configuration {
     public static final String CSV_COMPRESSION = "macrobase.loader.csv.compression";
     
     public static final String CONTEXTUAL_ENABLED = "macrobase.analysis.contextual.enabled";
+    public static final String CONTEXTUAL_API = "macrobase.analysis.contextual.api";
+    public static final String CONTEXTUAL_API_OUTLIER_PREDICATES = "macrobase.analysis.contextual.api.outlierPredicates";
     public static final String CONTEXTUAL_DISCRETE_ATTRIBUTES = "macrobase.analysis.contextual.discreteAttributes";
     public static final String CONTEXTUAL_DOUBLE_ATTRIBUTES = "macrobase.analysis.contextual.doubleAttributes";
     public static final String CONTEXTUAL_DENSECONTEXTTAU = "macrobase.analysis.contextual.denseContextTau";
     public static final String CONTEXTUAL_NUMINTERVALS = "macrobase.analysis.contextual.numIntervals";
+    public static final String CONTEXTUAL_MAX_PREDICATES = "macrobase.analysis.contextual.maxPredicates";
+    public static final String CONTEXTUAL_OUTPUT_FILE = "macrobase.analysis.contextual.outputFile";
+    public static final String CONTEXTUAL_PRUNING = "macrobase.analysis.contextual.pruning";
     public static final String OUTLIER_STATIC_THRESHOLD = "macrobase.analysis.classify.outlierStaticThreshold";
 
     public static final String SCORE_DUMP_FILE_CONFIG_PARAM = "macrobase.diagnostic.dumpScoreFile";

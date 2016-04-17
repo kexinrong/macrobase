@@ -1,13 +1,15 @@
 package macrobase.analysis.contextualoutlier;
 
 import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashSet;
 import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import macrobase.analysis.stats.BatchTrainScore;
 import macrobase.datamodel.Datum;
 import macrobase.ingest.DatumEncoder;
 
@@ -17,66 +19,136 @@ public class Context {
 
     
     /**
-	 * A set of intervals this context contains
-	 * one dimension can have at most one interval
+	 * A list of ordered contextual dimensions this node represents
+	 * and intervals for each dimension
 	 */
-	private SortedMap<Integer,Interval> dimension2Interval;
+	private List<Integer> dimensions = new ArrayList<Integer>();
+	private List<Interval> intervals = new ArrayList<Interval>();;
+	
+	private int size = -1;
+	private List<Context> parents = new ArrayList<Context>();
+ 
+	private HashSet<Context> oneDimensionalAncestors = new HashSet<Context>();
+	
+	//the sample is maintained in the lattice
+	private HashSet<Datum> sample = new HashSet<Datum>();
+	
+	
+	//the outlier detector used for detection in this context
+	private BatchTrainScore detector;
 	
 	
 	/**
-	 * A list of tuple ids that this unit contains
+	 * Global context
 	 */
-	private List<Integer> tids;
+	public Context(HashSet<Datum> sample){
+		this.sample = sample;
+	}
 	
 	/**
 	 * Initialize a one dimensional context
 	 * @param dimension
 	 * @param interval
+	 * @param parent
 	 */
-	public Context(int dimension, Interval interval){
-		dimension2Interval = new TreeMap<Integer, Interval>();
-		dimension2Interval.put(dimension, interval);
+	public Context(int dimension, Interval interval, Context parent){
+		dimensions.add(dimension);
+		intervals.add(interval);
+		parents.add(parent);
 		
-		tids = new ArrayList<Integer>();
-	}
-	
-	public Context(SortedMap<Integer, Interval> newDimension2Interval) {
-		this.dimension2Interval = newDimension2Interval;
-		
-		tids = new ArrayList<Integer>();
-	}
-
-	public List<Integer> getDimensions(){
-		List<Integer> result = new ArrayList<Integer>();
-		for(Integer k: dimension2Interval.keySet()){
-			result.add(k);
+		for(Datum d: parent.sample){
+			if(containDatum(d)){
+				sample.add(d);
+			}
 		}
-		return result;
+		
+		oneDimensionalAncestors.add(this);
+		
+		
 	}
 	
-	public List<Integer> getTIDs(){
-		return tids;
-	}
-	public void addTID(int tid){
-		tids.add(tid);
-	}
-	public boolean removeTID(int tid){
-		return tids.remove(new Integer(tid));
+	public Context(List<Integer> dimensions, List<Interval> intervals, Context parent1, Context parent2) {
+		this.dimensions = dimensions;
+		this.intervals = intervals;
+		
+		parents.add(parent1);
+		parents.add(parent2);
+	
+		sample.addAll(parent1.sample);
+		sample.retainAll(parent2.sample);
+		
+		oneDimensionalAncestors.addAll(parent1.oneDimensionalAncestors);
+		oneDimensionalAncestors.addAll(parent2.oneDimensionalAncestors);
+
+		
 	}
 	
-	/**
-	 * 
-	 * @param total is the total number of tuples, tau is the minimum threshold
-	 * @param tau
-	 * @return
-	 */
-	public boolean isDense(int total, double tau){
-		double density = (double) tids.size() / total;
-		if(density > tau)
-			return true;
-		else
-			return false;
+	public BitSet getContextualBitSet(List<Datum> data, Map<Context,BitSet> context2BitSet){
+		
+		//global context
+		if(parents.size() == 0){
+			BitSet bs = new BitSet(data.size());
+			bs.set(0, data.size());
+			return bs;
+		}
+		BitSet bs = null;
+		//one dimensional context
+		if(parents.size() == 1 && context2BitSet.containsKey(this)){
+			bs = context2BitSet.get(this);
+		}
+		//context whose parents are known
+		if(parents.size() == 2){
+			Context p1 = parents.get(0);
+			Context p2 = parents.get(1);
+			if(context2BitSet.containsKey(p1) && context2BitSet.containsKey(p2)){
+				BitSet b1 = context2BitSet.get(p1);
+				BitSet b2 = context2BitSet.get(p2);
+				bs = (BitSet) b1.clone();
+				bs.and(b2);
+			}
+		}
+		return bs;
+		/*
+		if(bs != null)
+			return bs;
+		
+		//contexts whose ancestors are known
+		boolean useIntersection = true;
+		for(Context c: oneDimensionalAncestors){
+			if(!context2BitSet.containsKey(c)){
+				useIntersection = false;
+				break;
+			}
+		}
+		if(useIntersection){
+			for(Context c: oneDimensionalAncestors){
+				if(bs == null){
+					bs = (BitSet) context2BitSet.get(c).clone();
+				}else{
+					bs.and(context2BitSet.get(c));
+				}
+			}
+		}
+		if(bs != null)
+			return bs;
+		
+		//contexts don't know anything
+		bs = new BitSet(data.size());
+		for(int i = 0; i < data.size(); i++){
+			Datum datum = data.get(i);
+			if(containDatum(datum)){
+				bs.set(i);
+			}
+		}
+		return bs;
+		*/
+			
+		
+			
 	}
+	
+	
+	
 	
 	/**
 	 * Determine if the unit contains the tuple
@@ -90,14 +162,15 @@ public class Context {
 		int totalDimensions = discreteDimensions + doubleDimensions ;
 	
 		
-		for(Integer k: dimension2Interval.keySet()){
+		for(int i = 0; i < dimensions.size(); i++){
+			int k = dimensions.get(i);
 			if( k >=0 && k < discreteDimensions){
 				int value = datum.getContextualDiscreteAttributes().get(k);
-				if(!dimension2Interval.get(k).contains(value))
+				if(!intervals.get(i).contains(value))
 					return false;
 			}else if( k >= discreteDimensions && k < totalDimensions){
 				double value = datum.getContextualDoubleAttributes().getEntry(k - discreteDimensions);
-				if(!dimension2Interval.get(k).contains(value))
+				if(!intervals.get(i).contains(value))
 					return false;
 			}
 		}
@@ -108,78 +181,109 @@ public class Context {
 	 * Join this Context with other Context, can only be joined if the first (k-1) dimensions
 	 * have the same interval, and the last dimension has different interval
 	 * 
-	 * If not, return null
+	 * can be joined only if the size of the context is at least minSize
 	 * 
 	 * 
 	 * @param other
 	 * @return
 	 */
-	public Context join(Context other){
+	public Context join(Context other, List<Datum> data, double tau){
 		
-		SortedMap<Integer,Interval> newDimension2Interval = new TreeMap<Integer,Interval>();
+		List<Integer> newDimensions = new ArrayList<Integer>();
+		List<Interval> newIntervals = new ArrayList<Interval>();
 		
 		
-		List<Integer> dimensions1 = getDimensions();
-		List<Integer> dimensions2 = other.getDimensions();
+		List<Integer> dimensions1 = dimensions;
+		List<Integer> dimensions2 = other.dimensions;
 		if(dimensions1.size() != dimensions2.size())
 			return null;
 		
 		for(int i = 0; i < dimensions1.size(); i++){
 			int dimension1 = dimensions1.get(i);
 			int dimension2 = dimensions2.get(i);
-			Interval interval1 = dimension2Interval.get(dimension1);
-			Interval interval2 = other.dimension2Interval.get(dimension2);
+			Interval interval1 = intervals.get(i);
+			Interval interval2 = other.intervals.get(i);
 		
 			if(i !=dimensions1.size() - 1 ){
 				if(dimension1 != dimension2)
 					return null;
 					if(interval1 != interval2)
 					return null;
-				newDimension2Interval.put(dimension1, interval1);
+					newDimensions.add(dimension1);
+					newIntervals.add(interval1);
+				
 			}else{
-					newDimension2Interval.put(dimension1, interval1);
-				newDimension2Interval.put(dimension2, interval2);
+				newDimensions.add(dimension1);
+				newIntervals.add(interval1);
+				
+				newDimensions.add(dimension2);
+				newIntervals.add(interval2);
+				
 			}
 			
 		}
 	
-		Context newUnit = new Context(newDimension2Interval);
+		Context newUnit = new Context(newDimensions, newIntervals, this, other);
 		
-		//merge two sorted tids
-		int index1 = 0;
-		int index2 = 0;
-		while(index1 < tids.size() && index2 < other.tids.size()){
-			int tid1 = tids.get(index1);
-			int tid2 = other.tids.get(index2);
-			if(tid1 == tid2){
-				newUnit.addTID(tid1);
-				index1++;
-				index2++;
-			}else if(tid1 < tid2){
-				index1++;
-			}else{
-				index2++;
-			}
+		
+		if(ContextPruning.densityPruning(newUnit, tau)){
+			return null;
+		}
+		
+		if(ContextPruning.dependencyPruning(newUnit)){
+			return null;
 		}
 		
 		return newUnit;
 	}
 	
+
 	public String print(DatumEncoder encoder){
+		if(dimensions.size() == 0){
+			return "Global Context: ";
+		}
 		StringBuilder sb = new StringBuilder();
-		for(int d: dimension2Interval.keySet()){
-			sb.append( dimension2Interval.get(d).print(encoder) + " ");
+		for(int i = 0; i < dimensions.size(); i++){
+			sb.append( intervals.get(i).print(encoder) + " ");
 		}
 		return sb.toString();
 	}
 	
 	@Override
 	public String toString(){
+		if(dimensions.size() == 0){
+			return "Global Context: ";
+		}
 		StringBuilder sb = new StringBuilder();
-		for(int d: dimension2Interval.keySet()){
-			sb.append(d + ":" + dimension2Interval.get(d).toString() + " ");
+		for(int i = 0; i < dimensions.size(); i++){
+			sb.append(dimensions.get(i) + ":" + intervals.get(i).toString() + " ");
 		}
 		return sb.toString();
 	}
+
+
+	public int getSize() {
+		return size;
+	}
+
+	public void setSize(int size) {
+		this.size = size;
+	}
 	
+	
+	public HashSet<Datum> getSample(){
+		return sample;
+	}
+	
+	public List<Context> getParents(){
+		return parents;
+	}
+
+	public BatchTrainScore getDetector() {
+		return detector;
+	}
+
+	public void setDetector(BatchTrainScore detector) {
+		this.detector = detector;
+	}
 }

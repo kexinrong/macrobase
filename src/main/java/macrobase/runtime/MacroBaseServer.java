@@ -10,6 +10,7 @@ import macrobase.runtime.resources.AnalyzeResource;
 import macrobase.runtime.resources.RowSetResource;
 import macrobase.runtime.resources.SchemaResource;
 import macrobase.runtime.standalone.MacroBaseBatchCommand;
+import macrobase.runtime.standalone.MacroBaseContextualBatchCommand;
 import macrobase.runtime.standalone.MacroBaseStreamingCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,7 @@ public class MacroBaseServer extends Application<MacroBaseConf> {
     public void initialize(Bootstrap<MacroBaseConf> bootstrap) {
         bootstrap.addCommand(new MacroBaseBatchCommand());
         bootstrap.addCommand(new MacroBaseStreamingCommand());
+        bootstrap.addCommand(new MacroBaseContextualBatchCommand());
         bootstrap.addBundle(new AssetsBundle("/frontend", "/", "console.html"));
     }
 
