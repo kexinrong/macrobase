@@ -3,6 +3,7 @@ package macrobase.ingest;
 import macrobase.analysis.pipeline.stream.MBStream;
 import macrobase.conf.ConfigurationException;
 import macrobase.conf.MacroBaseConf;
+import macrobase.conf.MacroBaseDefaults;
 import macrobase.datamodel.Datum;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -14,10 +15,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 
 public class CSVIngester extends DataIngester {
@@ -30,6 +30,7 @@ public class CSVIngester extends DataIngester {
     private boolean loaded = false;
 
     private int badRows = 0;
+    private Integer timeColumn;
 
     public enum Compression {
         UNCOMPRESSED,
@@ -38,14 +39,22 @@ public class CSVIngester extends DataIngester {
 
     public CSVIngester(MacroBaseConf conf) throws ConfigurationException, IOException {
         super(conf);
+        timeColumn = conf.getInt(MacroBaseConf.TIME_COLUMN, MacroBaseDefaults.TIME_COLUMN);
     }
-    
-    private Datum parseRecord(CSVRecord record) throws NumberFormatException {
+
+    private Datum parseRecord(CSVRecord record) throws NumberFormatException, ParseException {
         int vecPos = 0;
 
         RealVector metricVec = new ArrayRealVector(metrics.size());
         for (String metric : metrics) {
-            metricVec.setEntry(vecPos, Double.parseDouble(record.get(metric)));
+            if (timeColumn != null && vecPos == timeColumn) {
+                // Parse timestamp
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+                Date parsedDate = dateFormat.parse(record.get(metric));
+                metricVec.setEntry(vecPos, parsedDate.getTime());
+            } else {
+                metricVec.setEntry(vecPos, Double.parseDouble(record.get(metric)));
+            }
             vecPos += 1;
         }
 

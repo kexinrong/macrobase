@@ -18,7 +18,7 @@ public class BatchSlidingWindowTransform extends SlidingWindowTransform {
         this.windowAggregate = AggregateConf.constructBatchAggregate(conf, aggregateType);
         this.timeColumn = conf.getInt(MacroBaseConf.TIME_COLUMN, MacroBaseDefaults.TIME_COLUMN);
         this.slideSize = slideSize;
-        this.windowSize = conf.getInt(MacroBaseConf.WINDOW_SIZE, MacroBaseDefaults.WINDOW_SIZE);
+        this.windowSize = conf.getInt(MacroBaseConf.TIME_WINDOW, MacroBaseDefaults.TIME_WINDOW);
     }
 
     private void slideWindow() {
