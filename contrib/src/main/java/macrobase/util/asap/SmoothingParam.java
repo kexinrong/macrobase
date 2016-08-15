@@ -10,13 +10,16 @@ import java.util.List;
 
 public class SmoothingParam {
     public MacroBaseConf conf;
+    public Metrics metrics;
     public int windowSize;
     public int slideSize;
     public List<Datum> data;
+    public String name;
     protected int windowRange;
     protected int binSize;
     protected double thresh;
-    protected Metrics metrics;
+    public long runtimeMS;
+    public int numPoints;
 
     public SmoothingParam(MacroBaseConf conf, int windowRange, int binSize, double thresh) throws Exception {
         this.conf = conf;
@@ -36,6 +39,9 @@ public class SmoothingParam {
         List<Datum> windows = sw.getStream().drain();
         this.data = windows;
         metrics = new Metrics(windows);
+        numPoints = windows.size();
+        windowSize = 1;
+        slideSize = 1;
     }
 
     public void findRangeSlide() throws Exception {};

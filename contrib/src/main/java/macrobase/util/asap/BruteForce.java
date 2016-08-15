@@ -1,10 +1,12 @@
 package macrobase.util.asap;
 
+import com.google.common.base.Stopwatch;
 import macrobase.analysis.transform.BatchSlidingWindowTransform;
 import macrobase.conf.MacroBaseConf;
 import macrobase.datamodel.Datum;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class BruteForce extends SmoothingParam {
     private BatchSlidingWindowTransform swTransform;
@@ -12,10 +14,12 @@ public class BruteForce extends SmoothingParam {
     public BruteForce(MacroBaseConf conf, int windowRange,
                       int binSize, double thresh) throws Exception {
         super(conf, windowRange, binSize, thresh);
+        name = "Brute Force";
     }
 
     @Override
     public void findRangeSlide() throws Exception {
+        Stopwatch sw = Stopwatch.createStarted();
         int maxWindow = windowRange / binSize / 3;
 
         double minVariance = 100;
@@ -26,7 +30,6 @@ public class BruteForce extends SmoothingParam {
                 swTransform.consume(data);
                 List<Datum> windows = swTransform.getStream().drain();
                 double var = metrics.smoothness(windows, s);
-                double kurtosis = metrics.kurtosis(windows);
                 double recall = metrics.recall(windows, w, s);
                 if (recall > thresh && var < minVariance) {
                     windowSize = w;
@@ -34,5 +37,6 @@ public class BruteForce extends SmoothingParam {
                 }
             }
         }
+        runtimeMS = sw.elapsed(TimeUnit.MILLISECONDS);
     }
 }

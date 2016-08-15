@@ -14,12 +14,18 @@ public class Metrics {
     private Mean mean;
     private List<Integer> originalOutliers;
 
-    public Metrics(List<Datum> data) {
+
+    public Metrics() {
         kurtosis = new Kurtosis();
         variance = new Variance();
         mean = new Mean();
+    }
+
+    public Metrics(List<Datum> data) {
+        this();
         originalOutliers = getOutlierIndices(data);
     }
+
 
     private double[] consecutiveSlops(double[] values, int dist) {
         double[] slopes = new double[values.length - 1];

@@ -32,7 +32,7 @@ public class ACF {
         correlations = new double[maxLag];
 
         for (int lag = 1; lag < maxLag; lag++) {
-            for (int i = 0; i < length; i ++) {
+            for (int i = 0; i < length - lag; i ++) {
                 y0ykSum[lag - 1] += data.get(i + lag) + data.get(i);
                 y0ykMul[lag - 1] += data.get(i + lag) * data.get(i);
             }
