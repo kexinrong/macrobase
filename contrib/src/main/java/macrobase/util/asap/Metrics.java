@@ -3,17 +3,18 @@ import macrobase.datamodel.Datum;
 import org.apache.commons.math3.stat.descriptive.moment.Kurtosis;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.Variance;
+import org.apache.commons.math3.util.IntegerSequence;
+import org.apache.commons.math3.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Metrics {
-    private static double ZSCORE_THRESH = 1.5;
+    private static double ZSCORE_THRESH = 2;
     private Kurtosis kurtosis;
     private Variance variance;
     private Mean mean;
-    private List<Integer> originalOutliers;
-
+    private List<Pair<Integer, Double>> originalOutliers;
 
     public Metrics() {
         kurtosis = new Kurtosis();
@@ -23,9 +24,8 @@ public class Metrics {
 
     public Metrics(List<Datum> data) {
         this();
-        originalOutliers = getOutlierIndices(data);
+        originalOutliers = getOutliers(data);
     }
-
 
     private double[] consecutiveSlops(double[] values, int dist) {
         double[] slopes = new double[values.length - 1];
@@ -73,12 +73,12 @@ public class Metrics {
         return zscores;
     }
 
-    public List<Integer> getOutlierIndices(List<Datum> data) {
-        List<Integer> outliers = new ArrayList<>();
+    public List<Pair<Integer, Double>> getOutliers(List<Datum> data) {
+        List<Pair<Integer, Double>> outliers = new ArrayList<>();
         double[] zscores = zscores(data);
         for (int i = 0; i < zscores.length; i ++) {
             if (zscores[i] > Metrics.ZSCORE_THRESH || zscores[i] < -Metrics.ZSCORE_THRESH)
-                outliers.add(i);
+                outliers.add(new Pair<>(i, zscores[i]));
         }
         return outliers;
     }
@@ -87,16 +87,36 @@ public class Metrics {
         if (originalOutliers.size() == 0 || data.size() == 0)
             return 0;
 
-        List<Integer> aggregateOutliers = getOutlierIndices(data);
+        List<Pair<Integer, Double>> aggregateOutliers = getOutliers(data);
         double preserved = 0;
-        for (int i : originalOutliers) {
-            for (int j : aggregateOutliers) {
-                if (Math.abs(j * slide - i) < range) {
+        for (Pair<Integer, Double> o : originalOutliers) {
+            for (Pair<Integer, Double> a : aggregateOutliers) {
+                if (Math.abs(a.getFirst() * slide - o.getFirst()) < range) {
                     preserved += 1;
                     break;
                 }
             }
         }
         return preserved / originalOutliers.size();
+    }
+
+
+    public double weightedRecall(List<Datum> data, int range, int slide) {
+        if (originalOutliers.size() == 0 || data.size() == 0)
+            return 0;
+
+        List<Pair<Integer, Double>> aggregateOutliers = getOutliers(data);
+        double preservedWeights = 0;
+        double totalWeights = 0;
+        for (Pair<Integer, Double> o : originalOutliers) {
+            totalWeights += Math.abs(o.getSecond());
+            for (Pair<Integer, Double> a : aggregateOutliers) {
+                if (Math.abs(a.getFirst() * slide - o.getFirst()) < range) {
+                    preservedWeights += Math.abs(o.getSecond());
+                    break;
+                }
+            }
+        }
+        return preservedWeights / totalWeights;
     }
 }
