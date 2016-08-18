@@ -32,7 +32,7 @@ public class AggregateConf {
                 log.info("Using MAX aggregation.");
                 return new BatchWindowMax(conf);
             case AVG:
-                log.info("Using AVG aggregation.");
+                //log.info("Using AVG aggregation.");
                 return new BatchWindowAvg(conf);
             default:
                 throw new RuntimeException("Unhandled batch aggreation type!" + aggregateType);
@@ -43,6 +43,8 @@ public class AggregateConf {
                                                                            AggregateType aggregateType)
             throws ConfigurationException {
         switch (aggregateType) {
+            case AVG:
+                return new IncrementalWindowAvg(conf);
             case SUM:
                 log.info("Using SUM aggregation.");
                 return new IncrementalWindowSum(conf);

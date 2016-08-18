@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ASAP extends SmoothingParam {
     private ACF acf;
+    private PeriodSMA sma;
     private BatchSlidingWindowTransform swTransform;
     private boolean usePeriod;
 
@@ -22,6 +23,7 @@ public class ASAP extends SmoothingParam {
         if (usePeriod) {
             acf = new ACF(data);
             name += "(no period)";
+            sma = new PeriodSMA(conf, data, binSize);
         }
     }
 
@@ -29,16 +31,24 @@ public class ASAP extends SmoothingParam {
         int period = 1;
         if (usePeriod) {
             period = acf.period;
+            sma.updatePane(period);
         }
         int w = 0;
         double recall = 1;
+        List<Datum> windows;
         while (recall > thresh && w < windowRange / binSize / 3) {
             w += period;
-            conf.set(MacroBaseConf.TIME_WINDOW, w);
-            swTransform = new BatchSlidingWindowTransform(conf, binSize);
-            swTransform.consume(data);
-            List<Datum> windows = swTransform.getStream().drain();
+            if (usePeriod) {
+                sma.updateRange(w);
+                windows = sma.getWindows();
+            } else {
+                conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
+                swTransform = new BatchSlidingWindowTransform(conf, binSize);
+                swTransform.consume(data);
+                windows = swTransform.getStream().drain();
+            }
             recall = metrics.recall(windows, w, 1);
+            System.out.println(String.format("%d %d %f %f", w, 1, recall, metrics.weightedRecall(windows, w, 1)));
         }
         if (recall < thresh && w > period)
             w -= period;
@@ -48,11 +58,18 @@ public class ASAP extends SmoothingParam {
     private int findSlide() throws ConfigurationException {
         int s = 1;
         double recall = 1;
+        List<Datum> windows;
         while (recall > thresh && s < windowSize) {
-            swTransform = new BatchSlidingWindowTransform(conf, binSize);
-            swTransform.consume(data);
-            List<Datum> windows = swTransform.getStream().drain();
+            if (usePeriod) {
+                sma.updateSlide(s);
+                windows = sma.getWindows();
+            } else {
+                swTransform = new BatchSlidingWindowTransform(conf, binSize);
+                swTransform.consume(data);
+                windows = swTransform.getStream().drain();
+            }
             recall = metrics.recall(windows, windowSize, s);
+            System.out.println(String.format("%d %d %f %f", windowSize, s, recall, metrics.weightedRecall(windows, windowSize, s)));
             s ++;
         }
         if (recall < thresh && s > 1)
