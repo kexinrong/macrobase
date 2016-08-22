@@ -20,7 +20,7 @@ public class IncrementalSlidingWindowTransform extends SlidingWindowTransform {
         this.windowAggregate = AggregateConf.constructIncrementalAggregate(conf, aggregateType);
         this.timeColumn = conf.getInt(MacroBaseConf.TIME_COLUMN, MacroBaseDefaults.TIME_COLUMN);
         this.slideSize = slideSize;
-        this.windowSize = conf.getInt(MacroBaseConf.TIME_WINDOW, MacroBaseDefaults.TIME_WINDOW);
+        this.windowSize = conf.getLong(MacroBaseConf.TIME_WINDOW, MacroBaseDefaults.TIME_WINDOW);
     }
 
     private List<Datum> slideWindow() {

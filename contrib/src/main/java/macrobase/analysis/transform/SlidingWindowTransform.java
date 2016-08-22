@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class SlidingWindowTransform extends FeatureTransform {
-    protected int windowSize;
+    protected long windowSize;
     protected int slideSize;
     protected int timeColumn;
     protected long windowStart = -1;
@@ -15,7 +15,7 @@ public abstract class SlidingWindowTransform extends FeatureTransform {
     protected MBStream<Datum> output = new MBStream<>();
     protected List<Datum> currWindow = new ArrayList<>();
 
-    protected boolean datumInRange(Datum d, long start, int size) {
+    protected boolean datumInRange(Datum d, long start, long size) {
         return d.getTime(timeColumn) - start < size;
     }
 }

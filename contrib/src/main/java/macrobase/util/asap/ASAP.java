@@ -10,20 +10,18 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class ASAP extends SmoothingParam {
-    private ACF acf;
-    private PeriodSMA sma;
+    private RunningACF acf;
     private BatchSlidingWindowTransform swTransform;
     private boolean usePeriod;
 
-    public ASAP(MacroBaseConf conf, int windowRange,
+    public ASAP(MacroBaseConf conf, long windowRange,
                 int binSize, double thresh, boolean usePeriod) throws Exception {
         super(conf, windowRange, binSize, thresh);
         this.usePeriod = usePeriod;
-        name = "ASAP";
+        name = "ASAP (no period)";
         if (usePeriod) {
-            acf = new ACF(data);
-            name += "(no period)";
-            sma = new PeriodSMA(conf, data, binSize);
+            acf = new RunningACF(currWindow);
+            name = "ASAP";
         }
     }
 
@@ -31,26 +29,21 @@ public class ASAP extends SmoothingParam {
         int period = 1;
         if (usePeriod) {
             period = acf.period;
-            sma.updatePane(period);
         }
-        int w = 0;
+        int w = period;
+        int maxWindow = (int)(windowRange / binSize / 3);
         double recall = 1;
         List<Datum> windows;
-        while (recall > thresh && w < windowRange / binSize / 3) {
-            w += period;
-            if (usePeriod) {
-                sma.updateRange(w);
-                windows = sma.getWindows();
-            } else {
-                conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
-                swTransform = new BatchSlidingWindowTransform(conf, binSize);
-                swTransform.consume(data);
-                windows = swTransform.getStream().drain();
-            }
+        while (w <= maxWindow) {
+            conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
+            swTransform = new BatchSlidingWindowTransform(conf, binSize);
+            swTransform.consume(currWindow);
+            windows = swTransform.getStream().drain();
             recall = metrics.recall(windows, w, 1);
-            System.out.println(String.format("%d %d %f %f", w, 1, recall, metrics.weightedRecall(windows, w, 1)));
+            pointsChecked += 1;
+            w += period;
         }
-        if (recall < thresh && w > period)
+        if ((recall < thresh || w > maxWindow) && w > period)
             w -= period;
         return w;
     }
@@ -59,18 +52,13 @@ public class ASAP extends SmoothingParam {
         int s = 1;
         double recall = 1;
         List<Datum> windows;
-        while (recall > thresh && s < windowSize) {
-            if (usePeriod) {
-                sma.updateSlide(s);
-                windows = sma.getWindows();
-            } else {
-                swTransform = new BatchSlidingWindowTransform(conf, binSize);
-                swTransform.consume(data);
-                windows = swTransform.getStream().drain();
-            }
+        while (recall > thresh && s <= windowSize) {
+            swTransform = new BatchSlidingWindowTransform(conf, binSize);
+            swTransform.consume(currWindow);
+            windows = swTransform.getStream().drain();
             recall = metrics.recall(windows, windowSize, s);
-            System.out.println(String.format("%d %d %f %f", windowSize, s, recall, metrics.weightedRecall(windows, windowSize, s)));
             s ++;
+            pointsChecked += 1;
         }
         if (recall < thresh && s > 1)
             s -= 1;

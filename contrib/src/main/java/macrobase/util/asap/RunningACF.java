@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 
-public class ACF {
+public class RunningACF {
     public int period;
     public RunningVar runningVar;
     public LinkedList<Double> data = new LinkedList<>();
@@ -18,7 +18,7 @@ public class ACF {
     private double[] y0ykMul;
     private List<Integer> peaks;
 
-    public ACF(List<Datum> datum) {
+    public RunningACF(List<Datum> datum) {
         data = new LinkedList<>();
         for (Datum d : datum) {
             data.add(d.metrics().getEntry(1));

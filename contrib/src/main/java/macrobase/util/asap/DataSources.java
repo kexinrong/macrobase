@@ -12,12 +12,12 @@ public class DataSources {
             .put(1, "iowa_liquor").put(2, "nyc_taxi").put(3, "boston_taxi_pickups")
             .put(4, "fridge_data").put(5, "campaign_expenditures").put(6, "vmware_data")
             .put(7, "google_network").put(8, "art_daily_jumpsdown").put(9, "TravelTime_387").build();
-    public static Map<Integer, Integer> WINDOW_RANGES = ImmutableMap.<Integer, Integer>builder()
-            .put(1, 180 * 24 * 3600 * 1000).put(2, 180 * 24 * 3600 * 1000)
-            .put(3, 180 * 24 * 3600 * 1000).put(4, 60 * 24 * 3600 * 1000)
-            .put(5, 180 * 24 * 3600 * 1000).put(6, 80 * 24 * 3600 * 1000)
-            .put(7, 7 * 24 * 3600 * 1000).put(8, 14 * 24 * 3600 * 1000)
-            .put(9, 60 * 24 * 3600 * 1000).build();
+    public static Map<Integer, Long> WINDOW_RANGES = ImmutableMap.<Integer, Long>builder()
+            .put(1, 180 * 24 * 3600 * 1000L).put(2, 180 * 24 * 3600 * 1000L)
+            .put(3, 180 * 24 * 3600 * 1000L).put(4, 60 * 24 * 3600 * 1000L)
+            .put(5, 180 * 24 * 3600 * 1000L).put(6, 80 * 24 * 3600 * 1000L)
+            .put(7, 7 * 24 * 3600 * 1000L).put(8, 14 * 24 * 3600 * 1000L)
+            .put(9, 60 * 24 * 3600 * 1000L).build();
     public static Map<Integer, List<String>> COLUMN_NAMES = ImmutableMap.<Integer, List<String>>builder()
             .put(1, new ArrayList<>(Arrays.asList("date","total")))
             .put(2, new ArrayList<>(Arrays.asList("pickup_datetime","passenger_count")))
@@ -28,8 +28,4 @@ public class DataSources {
             .put(7, new ArrayList<>(Arrays.asList("date", "value")))
             .put(8, new ArrayList<>(Arrays.asList("timestamp","value")))
             .put(9, new ArrayList<>(Arrays.asList("timestamp","value"))).build();
-    public static Map<Integer, Integer> BIN_SIZE = ImmutableMap.<Integer, Integer>builder()
-            .put(1, 3600000).put(2, 3600000).put(3, 3600000).put(4, 3600000)
-            .put(5, 3600000).put(6, 3600000).put(7, 600000).put(8, 3600000)
-            .put(9, 3600000).build();
 }
