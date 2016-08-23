@@ -41,6 +41,14 @@ public class RunningACF {
         findPeriod();
     }
 
+    private List<Double> stripDatum(List<Datum> datum) {
+        List<Double> values = new ArrayList<>();
+        for (Datum d : datum) {
+            values.add(d.metrics().getEntry(1));
+        }
+        return values;
+    }
+
     private double getCorrelation(int lag) {
         return (y0ykMul[lag - 1] - runningVar.mean * y0ykSum[lag - 1] +
                 (length - lag) * runningVar.mean * runningVar.mean) / length / runningVar.variance;
@@ -49,16 +57,18 @@ public class RunningACF {
     private void findPeaks() {
         peaks = new ArrayList<>();
         int max_peak = 0;
-        boolean positivie = (correlations[1] > correlations[0]);
-        for (int i = 2; i < correlations.length; i++) {
-            if (!positivie && correlations[i] > correlations[i - 1]) {
-                max_peak = i;
-                positivie = !positivie;
-            } else if (positivie && correlations[i] > correlations[max_peak]) {
-                max_peak = i;
-            } else if (positivie && correlations[i] < correlations[i - 1]) {
-                peaks.add(max_peak);
-                positivie = !positivie;
+        if (correlations.length > 1) {
+            boolean positivie = (correlations[1] > correlations[0]);
+            for (int i = 2; i < correlations.length; i++) {
+                if (!positivie && correlations[i] > correlations[i - 1]) {
+                    max_peak = i;
+                    positivie = !positivie;
+                } else if (positivie && correlations[i] > correlations[max_peak]) {
+                    max_peak = i;
+                } else if (positivie && correlations[i] < correlations[i - 1]) {
+                    peaks.add(max_peak);
+                    positivie = !positivie;
+                }
             }
         }
         if (peaks.size() == 0) { peaks.add(0); }
@@ -66,7 +76,7 @@ public class RunningACF {
 
     private void findPeriod() {
         findPeaks();
-        int max_corr = 1;
+        int max_corr = 0;
         for (int i = 1; i < peaks.size(); i++) {
             if (correlations[peaks.get(i)] > correlations[peaks.get(max_corr)]) {
                 max_corr = i;
@@ -75,8 +85,10 @@ public class RunningACF {
         period = peaks.get(max_corr) + 1;
     }
 
-    public void update(List<Double> old_data, List<Double> new_data) {
-        assert(old_data.size() == new_data.size());
+    public void update(List<Datum> old_datum, List<Datum> new_datum) {
+        assert(old_datum.size() == new_datum.size());
+        List<Double> old_data = stripDatum(old_datum);
+        List<Double> new_data = stripDatum(new_datum);
         runningVar.update(old_data, new_data);
 
         for (int lag = 1; lag < maxLag; lag ++) {

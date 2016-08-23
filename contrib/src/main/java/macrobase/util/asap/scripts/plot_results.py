@@ -15,8 +15,8 @@ def plot_window(ts, readings, name, window, slide, binSize):
     plt.ylabel("readings", fontsize=25)
     plt.title(name, fontsize=25)
     plt.grid(True)
-    ax.text(0.5, 0.9, 'Interval: %s min, window: %s, slide: %s' \
-        %(binSize, window, slide),
+    ax.text(0.5, 0.9, 'window: %s min, slide: %s min' \
+        %(window * binSize, slide * binSize),
         fontsize=20,
         horizontalalignment='center',
         verticalalignment='center',
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     ts = []
     readings = []
     for line in f.readlines():
-        if len(line.split()) == 3:
+        if line[0] >= '0' and line[0] <= '9' and len(line.split()) == 3:
             binSize = float(line.split()[0]) / 1000 / 60
             w = float(line.split()[1])
             s = float(line.split()[2])

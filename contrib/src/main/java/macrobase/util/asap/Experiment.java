@@ -1,14 +1,10 @@
-package macrobase.util;
+package macrobase.util.asap;
 
 import macrobase.analysis.transform.BatchSlidingWindowTransform;
 import macrobase.analysis.transform.aggregate.AggregateConf;
 import macrobase.conf.ConfigurationException;
 import macrobase.conf.MacroBaseConf;
 import macrobase.datamodel.Datum;
-import macrobase.util.asap.ASAP;
-import macrobase.util.asap.BruteForce;
-import macrobase.util.asap.DataSources;
-import macrobase.util.asap.SmoothingParam;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -20,15 +16,24 @@ public class Experiment {
     protected static ASAP asap;
     protected static MacroBaseConf conf;
     protected static int datasetID;
+    protected static PrintWriter result;
+    protected static PrintWriter plot;
 
     public Experiment(int datasetID, int resolution, double thresh) throws Exception {
         this.datasetID = datasetID;
         conf = getConf(datasetID);
         long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
-        int binSize = (int)(windowRange / resolution);
+        long binSize = roundBinSize(windowRange, resolution);
         bf = new BruteForce(conf, windowRange, binSize, thresh);
         asapRaw = new ASAP(conf, windowRange, binSize, thresh, false);
         asap = new ASAP(conf, windowRange, binSize, thresh, true);
+    }
+
+    private long roundBinSize(long windowRange, int resolution) {
+        long binSize = windowRange / resolution;
+        // Round to the nearest multilples of 10 min
+        binSize = (binSize / 600000 + 1) * 600000;
+        return binSize;
     }
 
     protected static MacroBaseConf getConf(int datasetID) {
@@ -42,8 +47,7 @@ public class Experiment {
         return conf;
     }
 
-    protected void computeWindow(MacroBaseConf conf, SmoothingParam s,
-                               PrintWriter result, PrintWriter plot) throws ConfigurationException {
+    protected void computeWindow(MacroBaseConf conf, SmoothingParam s) throws ConfigurationException {
         conf.set(MacroBaseConf.TIME_WINDOW, s.windowSize * s.binSize);
         BatchSlidingWindowTransform sw = new BatchSlidingWindowTransform(conf, s.slideSize * s.binSize);
         sw.consume(s.currWindow);
@@ -52,8 +56,10 @@ public class Experiment {
         double recall = s.metrics.recall(windows, s.windowSize, s.slideSize);
         // Output to file
         result.println(s.name);
-        result.println(String.format("%d %d %f %f", s.windowSize, s.slideSize, var, recall));
-        result.println(String.format("%d %d %d", s.numPoints, s.pointsChecked, s.runtimeMS));
+        result.println(String.format("ws: %d, ss: %d, var: %f, recall: %f", s.windowSize, s.slideSize, var, recall));
+        result.println(String.format("#points: %d, #searches: %d, runtime: %d(ms)",
+                s.numPoints, s.pointsChecked, s.runtimeMS));
+        result.println();
         plot.println(s.name);
         plot.println(String.format("%d %d %d", s.binSize, s.windowSize, s.slideSize));
         for (Datum d : windows) {

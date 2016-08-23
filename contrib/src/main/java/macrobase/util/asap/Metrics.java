@@ -54,8 +54,9 @@ public class Metrics {
 
     public double smoothness(List<Datum> data, int dist) {
         double[] slopes = consecutiveSlops(stripDatum(data), dist);
-        double[] deltas = deltaOfDelta(slopes);
-        return variance.evaluate(deltas);
+        //double[] deltas = deltaOfDelta(slopes);
+        //return variance.evaluate(deltas);
+        return variance.evaluate(slopes);
     }
 
     public double kurtosis(List<Datum> data) {
@@ -109,10 +110,18 @@ public class Metrics {
         double preservedWeights = 0;
         double totalWeights = 0;
         for (Pair<Integer, Double> o : originalOutliers) {
-            totalWeights += Math.abs(o.getSecond());
+            if (o.getSecond() < 0) {
+                totalWeights += Math.abs(o.getSecond() + ZSCORE_THRESH);
+            } else {
+                totalWeights += o.getSecond() - ZSCORE_THRESH;
+            }
             for (Pair<Integer, Double> a : aggregateOutliers) {
                 if (Math.abs(a.getFirst() * slide - o.getFirst()) < range) {
-                    preservedWeights += Math.abs(o.getSecond());
+                    if (o.getSecond() < 0) {
+                        preservedWeights += Math.abs(o.getSecond() + ZSCORE_THRESH);
+                    } else {
+                        preservedWeights += o.getSecond() - ZSCORE_THRESH;
+                    }
                     break;
                 }
             }

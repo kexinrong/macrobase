@@ -8,6 +8,11 @@ import java.util.List;
 public class TimeDatumStream extends MBStream<Datum> {
     private int timeColumn;
 
+    public TimeDatumStream(int timeColumn) {
+        super();
+        this.timeColumn = timeColumn;
+    }
+
     public TimeDatumStream(List<Datum> data, int timeColumn) {
         super(data);
         this.timeColumn = timeColumn;
@@ -24,5 +29,9 @@ public class TimeDatumStream extends MBStream<Datum> {
             i ++;
         }
         return drain(i);
+    }
+
+    public Datum peek() {
+        return output.get(output.size() - 1);
     }
 }

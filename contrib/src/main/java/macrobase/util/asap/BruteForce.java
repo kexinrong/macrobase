@@ -13,7 +13,7 @@ public class BruteForce extends SmoothingParam {
     private BatchSlidingWindowTransform swTransform;
 
     public BruteForce(MacroBaseConf conf, long windowRange,
-                      int binSize, double thresh) throws Exception {
+                      long binSize, double thresh) throws Exception {
         super(conf, windowRange, binSize, thresh);
         name = "Brute Force";
     }
@@ -21,9 +21,10 @@ public class BruteForce extends SmoothingParam {
     @Override
     public void findRangeSlide() throws Exception {
         Stopwatch sw = Stopwatch.createStarted();
-        int maxWindow = (int)(windowRange / binSize / 3);
+        int maxWindow = (int)(windowRange / binSize / 10);
 
-        double minVariance = 100;
+        double minVariance = Integer.MAX_VALUE;
+        pointsChecked = 0;
         for (int w = 1; w < maxWindow; w ++) {
             conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
             for (int s = 1; s < w; s ++) {
@@ -41,5 +42,16 @@ public class BruteForce extends SmoothingParam {
             }
         }
         runtimeMS = sw.elapsed(TimeUnit.MILLISECONDS);
+    }
+
+    public void updateWindow(long interval) throws ConfigurationException {
+        List<Datum> data = dataStream.drainDuration(interval);
+        numPoints = data.size();
+        BatchSlidingWindowTransform sw = new BatchSlidingWindowTransform(conf, binSize);
+        sw.consume(data);
+        sw.shutdown();
+        List<Datum> newPanes = sw.getStream().drain();
+        currWindow.addAll(newPanes);
+        currWindow.remove(currWindow.subList(0, newPanes.size()));
     }
 }
