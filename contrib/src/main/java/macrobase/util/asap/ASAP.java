@@ -27,19 +27,21 @@ public class ASAP extends SmoothingParam {
 
     private int findRange() throws ConfigurationException {
         int period = 1;
+        int w = 2;
         if (usePeriod) {
             period = acf.period;
+            w = period;
         }
-        int w = period;
         int maxWindow = (int)(windowRange / binSize / 10);
         double recall = 1;
-        double minVariance = Integer.MAX_VALUE;
+        double minVariance = Double.MAX_VALUE;
         int maxWindowSize = 1;
         pointsChecked = 0;
         while (w <= maxWindow) {
             conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
             swTransform = new BatchSlidingWindowTransform(conf, binSize);
             swTransform.consume(currWindow);
+            swTransform.shutdown();
             List<Datum> windows = swTransform.getStream().drain();
             double var = metrics.smoothness(windows, 1);
             recall = metrics.weightedRecall(windows, w, 1);
@@ -48,6 +50,8 @@ public class ASAP extends SmoothingParam {
                 maxWindowSize = w;
             }
             pointsChecked += 1;
+            //if (recall == 0)
+            //    break;
             w += period;
         }
         return maxWindowSize;
@@ -61,6 +65,7 @@ public class ASAP extends SmoothingParam {
             s ++;
             swTransform = new BatchSlidingWindowTransform(conf, s * binSize);
             swTransform.consume(currWindow);
+            swTransform.shutdown();
             List<Datum> windows = swTransform.getStream().drain();
             recall = metrics.weightedRecall(windows, windowSize, s);
             pointsChecked += 1;

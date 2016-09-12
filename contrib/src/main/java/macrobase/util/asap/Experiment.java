@@ -32,7 +32,11 @@ public class Experiment {
     private long roundBinSize(long windowRange, int resolution) {
         long binSize = windowRange / resolution;
         // Round to the nearest multilples of 10 min
-        binSize = (binSize / 600000 + 1) * 600000;
+        if (binSize > 600000) {
+            binSize = (binSize / 600000 + 1) * 600000;
+        } else if (binSize > 1000) {
+            binSize = (binSize / 1000 + 1) * 1000;
+        }
         return binSize;
     }
 
@@ -54,6 +58,7 @@ public class Experiment {
         conf.set(MacroBaseConf.TIME_WINDOW, s.windowSize * s.binSize);
         BatchSlidingWindowTransform sw = new BatchSlidingWindowTransform(conf, s.slideSize * s.binSize);
         sw.consume(s.currWindow);
+        sw.shutdown();
         List<Datum> windows = sw.getStream().drain();
         double var = s.metrics.smoothness(windows, s.slideSize);
         double recall = s.metrics.weightedRecall(windows, s.windowSize, s.slideSize);

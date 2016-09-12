@@ -1,11 +1,11 @@
 package macrobase.util.asap;
 
 import com.google.common.collect.ImmutableMap;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
 
 public class DataSources {
     public static Map<Integer, String> TABLE_NAMES = ImmutableMap.<Integer, String>builder()
@@ -20,6 +20,10 @@ public class DataSources {
             .put(16, "household_power_consumption")
             .put(17, "online_retail_price")
             .put(18, "building_count")
+            .put(19, "Twitter_volume_AAPL")
+            .put(20, "nyc_taxi_30")
+            .put(21, "cpu_utilization_asg_misconfiguration")
+            .put(22, "machine_temperature_system_failure")
             .build();
     public static Map<Integer, Long> WINDOW_RANGES = ImmutableMap.<Integer, Long>builder()
             .put(1, 180 * 24 * 3600 * 1000L).put(2, 20 * 24 * 3600 * 1000L)
@@ -36,6 +40,10 @@ public class DataSources {
             .put(16, 47 * 30 * 24 * 3600 * 1000L) // 47 months
             .put(17, 8 * 30 * 3600 * 1000L) // 8 months
             .put(18, 15 * 7 * 24 * 3600 * 1000L) // 15 weeks
+            .put(19, 50 * 24 * 3600 * 1000L) // 50 days
+            .put(20, 7 * 30 * 24 * 3600 * 1000L) // 7 months
+            .put(21, 50 * 24 * 3600 * 1000L) // 50 days
+            .put(22, 70 * 24 * 3600 * 1000L) // 70 days
             .build();
     public static Map<Integer, String> TIME_FORMATS = ImmutableMap.<Integer, String>builder()
             .put(10, "sec")
@@ -47,6 +55,10 @@ public class DataSources {
             .put(16, "dd/MM/yyyy hh:mm:ss")
             .put(17, "MM/dd/yyyy hh:mm")
             .put(18, "MM/dd/yyyy hh:mm:ss")
+            .put(19, "yyyy-MM-dd hh:mm:ss")
+            .put(20, "yyyy-MM-dd hh:mm:ss")
+            .put(21, "yyyy-MM-dd hh:mm:ss")
+            .put(22, "yyyy-MM-dd hh:mm:ss")
             .build();
     public static Map<Integer, List<String>> COLUMN_NAMES = ImmutableMap.<Integer, List<String>>builder()
             .put(1, new ArrayList<>(Arrays.asList(" date"," total")))
@@ -70,5 +82,9 @@ public class DataSources {
             .put(16, new ArrayList<>(Arrays.asList("Time", "Global_active_power")))
             .put(17, new ArrayList<>(Arrays.asList("Time", "Price")))
             .put(18, new ArrayList<>(Arrays.asList("Time", "Count")))
+            .put(19, new ArrayList<>(Arrays.asList("timestamp", "value")))
+            .put(20, new ArrayList<>(Arrays.asList("timestamp", "value")))
+            .put(21, new ArrayList<>(Arrays.asList("timestamp", "value")))
+            .put(22, new ArrayList<>(Arrays.asList("timestamp", "value")))
             .build();
 }
