@@ -31,6 +31,7 @@ public class CSVIngester extends DataIngester {
 
     private int badRows = 0;
     private Integer timeColumn;
+    private String timeFormat;
 
     public enum Compression {
         UNCOMPRESSED,
@@ -40,6 +41,7 @@ public class CSVIngester extends DataIngester {
     public CSVIngester(MacroBaseConf conf) throws ConfigurationException, IOException {
         super(conf);
         timeColumn = conf.getInt(MacroBaseConf.TIME_COLUMN, MacroBaseDefaults.TIME_COLUMN);
+        timeFormat = conf.getString(MacroBaseConf.TIME_FORMAT, MacroBaseDefaults.TIME_FORMAT);
     }
 
     private Datum parseRecord(CSVRecord record) throws NumberFormatException, ParseException {
@@ -50,7 +52,7 @@ public class CSVIngester extends DataIngester {
             if (timeColumn != null && vecPos == timeColumn) {
                 // Parse timestamp
                 try {
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+                    SimpleDateFormat dateFormat = new SimpleDateFormat(timeFormat);
                     Date parsedDate = dateFormat.parse(record.get(metric));
                     metricVec.setEntry(vecPos, parsedDate.getTime());
                 } catch (ParseException e) {

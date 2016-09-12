@@ -47,6 +47,7 @@ public class MacroBaseDefaults {
     // loader defaults
     public static final DataIngesterType DATA_LOADER_TYPE = DataIngesterType.POSTGRES_LOADER;
     public static final Integer TIME_COLUMN = null;
+    public static final String TIME_FORMAT = "yyyy-MM-dd hh:mm:ss";
     public static final MacroBaseConf.TransformType TRANSFORM_TYPE = MacroBaseConf.TransformType.MAD_OR_MCD;
     public static final CSVIngester.Compression CSV_COMPRESSION = CSVIngester.Compression.UNCOMPRESSED;
 

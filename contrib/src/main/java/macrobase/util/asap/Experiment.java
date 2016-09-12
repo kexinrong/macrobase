@@ -44,6 +44,9 @@ public class Experiment {
         conf.set(MacroBaseConf.METRICS, DataSources.COLUMN_NAMES.get(datasetID));
         conf.set(MacroBaseConf.TIME_COLUMN, 0);
         conf.set(AggregateConf.AGGREGATE_TYPE, AggregateConf.AggregateType.AVG);
+        if (DataSources.TIME_FORMATS.containsKey(datasetID)) {
+            conf.set(MacroBaseConf.TIME_FORMAT, DataSources.TIME_FORMATS.get(datasetID));
+        }
         return conf;
     }
 
@@ -53,7 +56,7 @@ public class Experiment {
         sw.consume(s.currWindow);
         List<Datum> windows = sw.getStream().drain();
         double var = s.metrics.smoothness(windows, s.slideSize);
-        double recall = s.metrics.recall(windows, s.windowSize, s.slideSize);
+        double recall = s.metrics.weightedRecall(windows, s.windowSize, s.slideSize);
         // Output to file
         result.println(s.name);
         result.println(String.format("ws: %d, ss: %d, var: %f, recall: %f", s.windowSize, s.slideSize, var, recall));

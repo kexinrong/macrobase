@@ -51,6 +51,7 @@ public class MacroBaseConf extends Configuration {
 
     public static final String DATA_LOADER_TYPE = "macrobase.loader.loaderType";
     public static final String TIME_COLUMN = "macrobase.loader.timeColumn";
+    public static final String TIME_FORMAT = "macrobase.loader.timeFormat";
     public static final String ATTRIBUTES = "macrobase.loader.attributes";
     public static final String METRICS = "macrobase.loader.metrics";
     public static final String LOW_METRIC_TRANSFORM = "macrobase.analysis.metrics.lowTransform";

@@ -32,7 +32,7 @@ public class BruteForce extends SmoothingParam {
                 swTransform.consume(currWindow);
                 List<Datum> windows = swTransform.getStream().drain();
                 double var = metrics.smoothness(windows, s);
-                double recall = metrics.recall(windows, w, s);
+                double recall = metrics.weightedRecall(windows, w, s);
                 if (recall > thresh && var < minVariance) {
                     minVariance = var;
                     windowSize = w;
@@ -41,7 +41,7 @@ public class BruteForce extends SmoothingParam {
                 pointsChecked += 1;
             }
         }
-        runtimeMS = sw.elapsed(TimeUnit.MILLISECONDS);
+        runtimeMS += sw.elapsed(TimeUnit.MILLISECONDS);
     }
 
     public void updateWindow(long interval) throws ConfigurationException {

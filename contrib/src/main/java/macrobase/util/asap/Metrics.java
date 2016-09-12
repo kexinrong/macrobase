@@ -92,7 +92,7 @@ public class Metrics {
         double preserved = 0;
         for (Pair<Integer, Double> o : originalOutliers) {
             for (Pair<Integer, Double> a : aggregateOutliers) {
-                if (Math.abs(a.getFirst() * slide - o.getFirst()) < range) {
+                if (o.getFirst() >= a.getFirst() * slide && o.getFirst() - a.getFirst() * slide < range) {
                     preserved += 1;
                     break;
                 }
@@ -101,31 +101,53 @@ public class Metrics {
         return preserved / originalOutliers.size();
     }
 
-
     public double weightedRecall(List<Datum> data, int range, int slide) {
         if (originalOutliers.size() == 0 || data.size() == 0)
             return 0;
 
-        List<Pair<Integer, Double>> aggregateOutliers = getOutliers(data);
         double preservedWeights = 0;
         double totalWeights = 0;
+        List<Pair<Integer, Double>> aggregateOutliers = getOutliers(data);
         for (Pair<Integer, Double> o : originalOutliers) {
-            if (o.getSecond() < 0) {
-                totalWeights += Math.abs(o.getSecond() + ZSCORE_THRESH);
-            } else {
-                totalWeights += o.getSecond() - ZSCORE_THRESH;
-            }
+            totalWeights += Math.abs(o.getSecond()) - ZSCORE_THRESH;
             for (Pair<Integer, Double> a : aggregateOutliers) {
-                if (Math.abs(a.getFirst() * slide - o.getFirst()) < range) {
-                    if (o.getSecond() < 0) {
-                        preservedWeights += Math.abs(o.getSecond() + ZSCORE_THRESH);
-                    } else {
-                        preservedWeights += o.getSecond() - ZSCORE_THRESH;
-                    }
+                if (o.getFirst() >= a.getFirst() * slide && o.getFirst() - a.getFirst() * slide < range) {
+                    preservedWeights += Math.abs(a.getSecond()) - ZSCORE_THRESH;
                     break;
                 }
             }
         }
+
         return preservedWeights / totalWeights;
+    }
+
+    public double retainedOutlyingness(List<Datum> data, int range, int slide) {
+        if (originalOutliers.size() == 0 || data.size() == 0)
+            return 0;
+
+        double deltas = 0;
+        double[] zscores = zscores(data);
+        int j = 0;
+        int ts = range / 2;
+        for (int i = 0; i < originalOutliers.size(); i ++) {
+            int originalTS = originalOutliers.get(i).getFirst();
+            double z_i = originalOutliers.get(i).getSecond();
+            while (j < data.size() && ts < originalTS) {
+                j += 1;
+                ts += slide;
+            }
+            if (j == 0 || j == zscores.length || ts == originalTS) {
+                if (j == zscores.length) {
+                    deltas += z_i - zscores[j - 1];
+                } else {
+                    deltas += z_i - zscores[j];
+                }
+            } else {
+                double new_z_i = zscores[j - 1] + (zscores[j] - zscores[j - 1]) *
+                        ((originalTS - ts + slide) / slide);
+                deltas += z_i - new_z_i;
+            }
+        }
+        return deltas / originalOutliers.size();
     }
 }

@@ -42,7 +42,7 @@ public class ASAP extends SmoothingParam {
             swTransform.consume(currWindow);
             List<Datum> windows = swTransform.getStream().drain();
             double var = metrics.smoothness(windows, 1);
-            recall = metrics.recall(windows, w, 1);
+            recall = metrics.weightedRecall(windows, w, 1);
             if (recall > thresh && var < minVariance) {
                 minVariance = var;
                 maxWindowSize = w;
@@ -62,7 +62,7 @@ public class ASAP extends SmoothingParam {
             swTransform = new BatchSlidingWindowTransform(conf, s * binSize);
             swTransform.consume(currWindow);
             List<Datum> windows = swTransform.getStream().drain();
-            recall = metrics.recall(windows, windowSize, s);
+            recall = metrics.weightedRecall(windows, windowSize, s);
             pointsChecked += 1;
         }
         if (recall < thresh)
@@ -86,9 +86,12 @@ public class ASAP extends SmoothingParam {
         sw.shutdown();
         List<Datum> panes = sw.getStream().drain();
         List<Datum> expiredPanes = currWindow.subList(0, panes.size());
-        if (usePeriod)
-            acf.update(expiredPanes, panes);
         currWindow.addAll(panes);
         currWindow.remove(expiredPanes);
+
+        Stopwatch watch = Stopwatch.createStarted();
+        if (usePeriod)
+            acf.update(expiredPanes, panes);
+        runtimeMS += watch.elapsed(TimeUnit.MILLISECONDS);
     }
 }

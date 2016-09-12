@@ -17,13 +17,20 @@ public class StreamingExperiment extends Experiment {
                         DataSources.TABLE_NAMES.get(datasetID)), "UTF-8");
     }
 
-    public void run(SmoothingParam s) throws Exception {
+    public void run(SmoothingParam s, long duration) throws Exception {
         while (s.dataStream.remaining() > 0) {
-            System.out.println(s.dataStream.remaining());
             s.findRangeSlide();
             export(s);
-            s.updateWindow(s.binSize);
+            s.updateWindow(duration);
         }
+    }
+
+    public void onDemandRun(SmoothingParam s, long duration) throws Exception {
+        while (s.dataStream.remaining() > 0) {
+            s.updateWindow(duration);
+        }
+        s.findRangeSlide();
+        export(s);
     }
 
     public void export(SmoothingParam s) throws Exception {
@@ -44,9 +51,9 @@ public class StreamingExperiment extends Experiment {
         int resolution = Integer.parseInt(args[0]);
         datasetID = Integer.parseInt(args[1]);
         StreamingExperiment exp = new StreamingExperiment(datasetID, resolution, 0.6);
-        exp.run(bf);
-        exp.run(asapRaw);
-        exp.run(asap);
+        exp.run(bf, bf.binSize);
+        exp.run(asapRaw, bf.binSize);
+        exp.run(asap, bf.binSize);
         result.close();
         plot.close();
     }

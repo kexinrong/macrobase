@@ -36,7 +36,7 @@ public class BatchSlidingWindowTransform extends SlidingWindowTransform {
         if (currWindow.size() == 0) {
             newWindow = output.peek();
         }
-        newWindow.metrics().setEntry(timeColumn, windowStart);
+        newWindow.metrics().setEntry(timeColumn, windowStart + windowSize / 2);
         output.add(newWindow);
         windowStart += this.slideSize;
     }

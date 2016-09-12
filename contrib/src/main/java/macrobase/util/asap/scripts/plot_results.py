@@ -3,17 +3,19 @@ import matplotlib.pyplot as plt
 from matplotlib import dates
 import datetime
 import numpy as np
+import scipy.stats
+
+THRESHOLD = 2
 
 def plot_window(ts, readings, name, window, slide, binSize):
     fig = plt.figure(figsize=(18, 10))
     ax = fig.add_subplot(111)
-    ax.set_title(name)
     ax.plot(ts, readings, linestyle='-', linewidth=1.5)
-    ax.xaxis.set_major_formatter(dates.DateFormatter('%m/%d'))
+    ax.xaxis.set_major_formatter(dates.DateFormatter('%m/%d/%Y'))
     plt.tick_params(labelsize=20)
     plt.xlabel("time", fontsize=25)
     plt.ylabel("readings", fontsize=25)
-    plt.title(name, fontsize=25)
+    plt.title(filename[:-6], fontsize=25)
     plt.grid(True)
     ax.text(0.5, 0.9, 'window: %s min, slide: %s min' \
         %(window * binSize, slide * binSize),
@@ -24,6 +26,43 @@ def plot_window(ts, readings, name, window, slide, binSize):
         bbox=dict(facecolor='red', alpha=0.2))
     plt.savefig("../plots/%s_%s.png" %(filename, name), format="png")
     plt.close(fig)
+
+
+def mark_outliers(window_starts, zscores, ax, indices):
+    for i in indices:
+        ax.plot(window_starts[i], zscores[i], marker='.', markersize=10, color="red")
+
+def get_outliers_by_threshold(zscores):
+    outlier_indices = []
+    for i in range(len(zscores)):
+        if zscores[i] >= THRESHOLD or zscores[i] <= -THRESHOLD:
+            outlier_indices.append(i)
+    return outlier_indices
+
+def plot_zscore(ts, readings, name, window, slide, binSize):
+    fig = plt.figure(figsize=(18, 10))
+    ax = fig.add_subplot(111)
+    zscores = scipy.stats.zscore(readings)
+    outliers = get_outliers_by_threshold(zscores)
+    ax.plot(ts, zscores, linestyle='-', linewidth=1.5)
+    mark_outliers(ts, zscores, ax, outliers)
+    ax.xaxis.set_major_formatter(dates.DateFormatter('%m/%d/%Y'))
+    plt.tick_params(labelsize=20)
+    plt.xlabel("time", fontsize=25)
+    plt.ylabel("readings", fontsize=25)
+    plt.title(filename[:-6], fontsize=25)
+    plt.grid(True)
+    ax.text(0.5, 0.9, 'window: %s min, slide: %s min' \
+        %(window * binSize, slide * binSize),
+        fontsize=20,
+        horizontalalignment='center',
+        verticalalignment='center',
+        transform = ax.transAxes,
+        bbox=dict(facecolor='red', alpha=0.2))
+    plt.savefig("../plots/%s_%s_zscores.png" %(filename, name), format="png")
+    plt.close(fig)
+
+
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -50,11 +89,12 @@ if __name__ == '__main__':
         else:
             if len(ts) > 0:
                 plot_window(ts, readings, name, w, s, binSize)
+                plot_zscore(ts, readings, name, w, s, binSize)
                 ts = []
                 readings = []
             name = line
 
-
     plot_window(ts, readings, name, w, s, binSize)
+    plot_zscore(ts, readings, name, w, s, binSize)
 
     f.close()

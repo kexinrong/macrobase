@@ -7,16 +7,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 
-public class RunningACF {
-    public int period;
+public class RunningACF extends ACF {
     public RunningVar runningVar;
     public LinkedList<Double> data = new LinkedList<>();
     public int length;
     public int maxLag;
-    public double[] correlations;
     private double[] y0ykSum;
     private double[] y0ykMul;
-    private List<Integer> peaks;
 
     public RunningACF(List<Datum> datum) {
         data = new LinkedList<>();
@@ -41,48 +38,9 @@ public class RunningACF {
         findPeriod();
     }
 
-    private List<Double> stripDatum(List<Datum> datum) {
-        List<Double> values = new ArrayList<>();
-        for (Datum d : datum) {
-            values.add(d.metrics().getEntry(1));
-        }
-        return values;
-    }
-
     private double getCorrelation(int lag) {
         return (y0ykMul[lag - 1] - runningVar.mean * y0ykSum[lag - 1] +
                 (length - lag) * runningVar.mean * runningVar.mean) / length / runningVar.variance;
-    }
-
-    private void findPeaks() {
-        peaks = new ArrayList<>();
-        int max_peak = 0;
-        if (correlations.length > 1) {
-            boolean positivie = (correlations[1] > correlations[0]);
-            for (int i = 2; i < correlations.length; i++) {
-                if (!positivie && correlations[i] > correlations[i - 1]) {
-                    max_peak = i;
-                    positivie = !positivie;
-                } else if (positivie && correlations[i] > correlations[max_peak]) {
-                    max_peak = i;
-                } else if (positivie && correlations[i] < correlations[i - 1]) {
-                    peaks.add(max_peak);
-                    positivie = !positivie;
-                }
-            }
-        }
-        if (peaks.size() == 0) { peaks.add(0); }
-    }
-
-    private void findPeriod() {
-        findPeaks();
-        int max_corr = 0;
-        for (int i = 1; i < peaks.size(); i++) {
-            if (correlations[peaks.get(i)] > correlations[peaks.get(max_corr)]) {
-                max_corr = i;
-            }
-        }
-        period = peaks.get(max_corr) + 1;
     }
 
     public void update(List<Datum> old_datum, List<Datum> new_datum) {

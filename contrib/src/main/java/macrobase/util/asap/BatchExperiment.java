@@ -44,7 +44,7 @@ public class BatchExperiment extends Experiment {
     public static void main(String[] args) throws Exception {
         int resolution = Integer.parseInt(args[0]);
         datasetID = Integer.parseInt(args[1]);
-        BatchExperiment exp = new BatchExperiment(datasetID, resolution, 0.6);
+        BatchExperiment exp = new BatchExperiment(datasetID, resolution, 0.7);
         exp.run();
         exp.export();
         result.close();
