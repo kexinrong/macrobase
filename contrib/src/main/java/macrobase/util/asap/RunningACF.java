@@ -23,7 +23,7 @@ public class RunningACF extends ACF {
 
         runningVar = new RunningVar(data);
         length = data.size();
-        maxLag = length / 3;
+        maxLag = length / 10;
         y0ykSum = new double[maxLag];
         y0ykMul = new double[maxLag];
         correlations = new double[maxLag];
@@ -35,7 +35,7 @@ public class RunningACF extends ACF {
             }
             correlations[lag] = getCorrelation(lag);
         }
-        findPeriod();
+        findPeaks();
     }
 
     private double getCorrelation(int lag) {
@@ -61,7 +61,7 @@ public class RunningACF extends ACF {
 
         for (int i = 0; i < new_data.size(); i ++) { data.remove(); }
         data.addAll(new_data);
-        findPeriod();
+        findPeaks();
     }
 }
 

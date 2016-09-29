@@ -7,6 +7,7 @@ import macrobase.conf.ConfigurationException;
 import macrobase.conf.MacroBaseConf;
 import macrobase.conf.MacroBaseDefaults;
 import macrobase.datamodel.Datum;
+import macrobase.util.asap.TimeDatumStream;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ public class IncrementalSlidingWindowTransform extends SlidingWindowTransform {
         this.timeColumn = conf.getInt(MacroBaseConf.TIME_COLUMN, MacroBaseDefaults.TIME_COLUMN);
         this.slideSize = slideSize;
         this.windowSize = conf.getLong(MacroBaseConf.TIME_WINDOW, MacroBaseDefaults.TIME_WINDOW);
+        output = new TimeDatumStream(timeColumn);
     }
 
     private List<Datum> slideWindow() {

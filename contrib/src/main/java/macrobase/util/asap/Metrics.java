@@ -3,18 +3,18 @@ import macrobase.datamodel.Datum;
 import org.apache.commons.math3.stat.descriptive.moment.Kurtosis;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.Variance;
-import org.apache.commons.math3.util.IntegerSequence;
 import org.apache.commons.math3.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Metrics {
-    private static double ZSCORE_THRESH = 2;
+    private static double ZSCORE_THRESH = 1.8;
     private Kurtosis kurtosis;
     private Variance variance;
     private Mean mean;
     private List<Pair<Integer, Double>> originalOutliers;
+    private double originalOutlyingness;
 
     public Metrics() {
         kurtosis = new Kurtosis();
@@ -25,6 +25,7 @@ public class Metrics {
     public Metrics(List<Datum> data) {
         this();
         originalOutliers = getOutliers(data);
+        originalOutlyingness = outlyingness(originalOutliers);
     }
 
     private double[] consecutiveSlops(double[] values, int dist) {
@@ -33,14 +34,6 @@ public class Metrics {
             slopes[i - 1] = (values[i] - values[i - 1]) / dist;
         }
         return slopes;
-    }
-
-    private double[] deltaOfDelta(double[] values) {
-        double[] deltas = new double[values.length - 1];
-        for (int i = 1; i < deltas.length; i ++) {
-            deltas[i - 1] = values[i] - values[i - 1];
-        }
-        return deltas;
     }
 
     private double[] stripDatum(List<Datum> data) {
@@ -54,8 +47,7 @@ public class Metrics {
 
     public double smoothness(List<Datum> data, int dist) {
         double[] slopes = consecutiveSlops(stripDatum(data), dist);
-        //double[] deltas = deltaOfDelta(slopes);
-        //return variance.evaluate(deltas);
+        //double[] slopes = consecutiveSlops(zscores(data), dist);
         return variance.evaluate(slopes);
     }
 
@@ -101,24 +93,36 @@ public class Metrics {
         return preserved / originalOutliers.size();
     }
 
+    public double outlyingness(List<Pair<Integer, Double>> outliers) {
+        double outlyingness = 0;
+        for (Pair<Integer, Double> o : outliers) {
+            //outlyingness += (Math.abs(o.getSecond()) - ZSCORE_THRESH) * (Math.abs(o.getSecond()) - ZSCORE_THRESH);
+            outlyingness += (Math.abs(o.getSecond()) - ZSCORE_THRESH);
+        }
+        return outlyingness;
+    }
+
+
     public double weightedRecall(List<Datum> data, int range, int slide) {
         if (originalOutliers.size() == 0 || data.size() == 0)
             return 0;
 
-        double preservedWeights = 0;
+        /*double preservedWeights = 0;
         double totalWeights = 0;
         List<Pair<Integer, Double>> aggregateOutliers = getOutliers(data);
         for (Pair<Integer, Double> o : originalOutliers) {
-            totalWeights += Math.abs(o.getSecond()) - ZSCORE_THRESH;
+            totalWeights += (Math.abs(o.getSecond()) - ZSCORE_THRESH) * (Math.abs(o.getSecond()) - ZSCORE_THRESH);
             for (Pair<Integer, Double> a : aggregateOutliers) {
                 if (o.getFirst() >= a.getFirst() * slide && o.getFirst() - a.getFirst() * slide < range) {
-                    preservedWeights += Math.abs(a.getSecond()) - ZSCORE_THRESH;
+                    preservedWeights += (Math.abs(a.getSecond()) - ZSCORE_THRESH) * (Math.abs(a.getSecond()) - ZSCORE_THRESH);
                     break;
                 }
             }
-        }
+        }*/
+        List<Pair<Integer, Double>> aggregateOutliers = getOutliers(data);
+        double preservedOutlyingness = outlyingness(aggregateOutliers);
 
-        return preservedWeights / totalWeights;
+        return preservedOutlyingness / originalOutlyingness;
     }
 
     public double retainedOutlyingness(List<Datum> data, int range, int slide) {

@@ -1,10 +1,7 @@
 package macrobase.util.asap;
 
-import macrobase.analysis.transform.aggregate.AggregateConf;
-import macrobase.conf.MacroBaseConf;
-import macrobase.datamodel.Datum;
-
 import java.io.PrintWriter;
+import java.util.Arrays;
 
 public class BatchExperiment extends Experiment {
 
@@ -18,35 +15,18 @@ public class BatchExperiment extends Experiment {
                         DataSources.TABLE_NAMES.get(datasetID)), "UTF-8");
     }
 
-    public void run() throws Exception {
-        bf.findRangeSlide();
-        asapRaw.findRangeSlide();
-        asap.findRangeSlide();
-    }
-
-    public void export() throws Exception {
-        MacroBaseConf conf = new MacroBaseConf();
-        conf.set(MacroBaseConf.TIME_COLUMN, 0);
-        conf.set(AggregateConf.AGGREGATE_TYPE, AggregateConf.AggregateType.AVG);
-
-        // Raw series
-        plot.println("Original");
-        plot.println(String.format("%d %d %d", bf.binSize, 1, 1));
-        for (Datum d : bf.currWindow) {
-            plot.println(String.format("%f,%f", d.metrics().getEntry(0), d.metrics().getEntry(1)));
-        }
-        // Compute window and output to file
-        computeWindow(conf, bf);
-        computeWindow(conf, asap);
-        computeWindow(conf, asapRaw);
-    }
-
     public static void main(String[] args) throws Exception {
         int resolution = Integer.parseInt(args[0]);
         datasetID = Integer.parseInt(args[1]);
         BatchExperiment exp = new BatchExperiment(datasetID, resolution, 0.7);
-        exp.run();
-        exp.export();
+        exportRaw();
+        asap.findRangeSlide();
+        computeWindow(exportConf, asap);
+        for (int s : Arrays.asList(1, 2, 5, 10)) {
+            grid.stepSize = s;
+            grid.findRangeSlide();
+            computeWindow(exportConf, grid);
+        }
         result.close();
         plot.close();
     }

@@ -1,4 +1,4 @@
-package macrobase.util.asap;
+contrib/src/main/java/macrobase/util/asap/Experiment.javapackage macrobase.util.asap;
 
 import macrobase.analysis.transform.aggregate.AggregateConf;
 import macrobase.conf.MacroBaseConf;
@@ -50,10 +50,11 @@ public class StreamingExperiment extends Experiment {
     public static void main(String[] args) throws Exception {
         int resolution = Integer.parseInt(args[0]);
         datasetID = Integer.parseInt(args[1]);
-        StreamingExperiment exp = new StreamingExperiment(datasetID, resolution, 0.6);
-        exp.run(bf, bf.binSize);
-        exp.run(asapRaw, bf.binSize);
-        exp.run(asap, bf.binSize);
+        StreamingExperiment exp = new StreamingExperiment(datasetID, resolution, 0.7);
+        //exp.run(bf, bf.binSize);
+        //exp.run(asap, bf.binSize);
+        exp.onDemandRun(grid, 7 * 24 * 3600 * 1000L);
+        exp.onDemandRun(asap, 7 * 24 * 3600 * 1000L);
         result.close();
         plot.close();
     }

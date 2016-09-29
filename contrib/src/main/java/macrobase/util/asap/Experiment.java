@@ -11,10 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Experiment {
-    protected static BruteForce bf;
-    protected static ASAP asapRaw;
+    protected static BruteForce grid;
     protected static ASAP asap;
     protected static MacroBaseConf conf;
+    protected static MacroBaseConf exportConf;
     protected static int datasetID;
     protected static PrintWriter result;
     protected static PrintWriter plot;
@@ -24,9 +24,12 @@ public class Experiment {
         conf = getConf(datasetID);
         long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
         long binSize = roundBinSize(windowRange, resolution);
-        bf = new BruteForce(conf, windowRange, binSize, thresh);
-        asapRaw = new ASAP(conf, windowRange, binSize, thresh, false);
-        asap = new ASAP(conf, windowRange, binSize, thresh, true);
+        grid = new BruteForce(conf, windowRange, binSize, thresh, 1);
+        asap = new ASAP(conf, windowRange, binSize, thresh);
+
+        exportConf = new MacroBaseConf();
+        exportConf.set(MacroBaseConf.TIME_COLUMN, 0);
+        exportConf.set(AggregateConf.AGGREGATE_TYPE, AggregateConf.AggregateType.AVG);
     }
 
     private long roundBinSize(long windowRange, int resolution) {
@@ -54,7 +57,16 @@ public class Experiment {
         return conf;
     }
 
-    protected void computeWindow(MacroBaseConf conf, SmoothingParam s) throws ConfigurationException {
+    protected static void exportRaw() {
+        // Raw series
+        plot.println("Original");
+        plot.println(String.format("%d %d %d", grid.binSize, 1, 1));
+        for (Datum d : grid.currWindow) {
+            plot.println(String.format("%f,%f", d.metrics().getEntry(0), d.metrics().getEntry(1)));
+        }
+    }
+
+    protected static void computeWindow(MacroBaseConf conf, SmoothingParam s) throws ConfigurationException {
         conf.set(MacroBaseConf.TIME_WINDOW, s.windowSize * s.binSize);
         BatchSlidingWindowTransform sw = new BatchSlidingWindowTransform(conf, s.slideSize * s.binSize);
         sw.consume(s.currWindow);

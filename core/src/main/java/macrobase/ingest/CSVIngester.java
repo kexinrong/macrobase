@@ -51,14 +51,13 @@ public class CSVIngester extends DataIngester {
         for (String metric : metrics) {
             if (timeColumn != null && vecPos == timeColumn) {
                 // Parse timestamp
-                try {
+                if (timeFormat.equals("sec")) {
+                    metricVec.setEntry(vecPos, Double.parseDouble(record.get(metric)) * 1000);
+                } else {
                     SimpleDateFormat dateFormat = new SimpleDateFormat(timeFormat);
                     Date parsedDate = dateFormat.parse(record.get(metric));
                     metricVec.setEntry(vecPos, parsedDate.getTime());
-                } catch (ParseException e) {
-                    metricVec.setEntry(vecPos, Double.parseDouble(record.get(metric)) * 1000);
                 }
-
             } else {
                 metricVec.setEntry(vecPos, Double.parseDouble(record.get(metric)));
             }

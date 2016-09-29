@@ -11,38 +11,36 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class BruteForce extends SmoothingParam {
+    public int stepSize;
     private BatchSlidingWindowTransform swTransform;
-    private FileWriter fw;
 
     public BruteForce(MacroBaseConf conf, long windowRange,
-                      long binSize, double thresh) throws Exception {
+                      long binSize, double thresh, int stepSize) throws Exception {
         super(conf, windowRange, binSize, thresh);
-        name = "Brute Force";
+        this.stepSize = stepSize;
     }
 
     @Override
     public void findRangeSlide() throws Exception {
+        name = String.format("Grid%d", stepSize);
         Stopwatch sw = Stopwatch.createStarted();
         int maxWindow = (int)(windowRange / binSize / 10);
 
         double minVariance = Double.MAX_VALUE;
         pointsChecked = 0;
-        for (int w = 1; w < maxWindow; w ++) {
+        for (int w = 1; w < maxWindow; w += stepSize) {
             conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
-            for (int s = 1; s < w; s ++) {
-                swTransform = new BatchSlidingWindowTransform(conf, s * binSize);
-                swTransform.consume(currWindow);
-                swTransform.shutdown();
-                List<Datum> windows = swTransform.getStream().drain();
-                double var = metrics.smoothness(windows, s);
-                double recall = metrics.weightedRecall(windows, w, s);
-                if (recall > thresh && var < minVariance) {
-                    minVariance = var;
-                    windowSize = w;
-                    slideSize = s;
-                }
-                pointsChecked += 1;
+            swTransform = new BatchSlidingWindowTransform(conf, binSize);
+            swTransform.consume(currWindow);
+            swTransform.shutdown();
+            List<Datum> windows = swTransform.getStream().drain();
+            double var = metrics.smoothness(windows, 1);
+            double recall = metrics.weightedRecall(windows, w, 1);
+            if (recall > thresh && var < minVariance) {
+                minVariance = var;
+                windowSize = w;
             }
+            pointsChecked += 1;
         }
         runtimeMS += sw.elapsed(TimeUnit.MILLISECONDS);
     }

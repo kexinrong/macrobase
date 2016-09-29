@@ -31,22 +31,11 @@ public abstract class ACF {
                 } else if (positive && correlations[i] > correlations[max_peak]) {
                     max_peak = i;
                 } else if (positive && correlations[i] < correlations[i - 1]) {
-                    peaks.add(max_peak);
+                    if (max_peak > 0) { peaks.add(max_peak); }
                     positive = !positive;
                 }
             }
         }
-        if (peaks.size() == 0) { peaks.add(0); }
-    }
-
-    protected void findPeriod() {
-        findPeaks();
-        int max_corr = 0;
-        for (int i = 1; i < peaks.size(); i++) {
-            if (correlations[peaks.get(i)] > correlations[peaks.get(max_corr)]) {
-                max_corr = i;
-            }
-        }
-        period = peaks.get(max_corr) + 1;
+        if (peaks.size() == 0) { peaks.add(1); }
     }
 }
