@@ -32,7 +32,7 @@ public class Experiment {
         exportConf.set(AggregateConf.AGGREGATE_TYPE, AggregateConf.AggregateType.AVG);
     }
 
-    private long roundBinSize(long windowRange, int resolution) {
+    public static long roundBinSize(long windowRange, int resolution) {
         long binSize = windowRange / resolution;
         // Round to the nearest multilples of 10 min
         if (binSize > 600000) {

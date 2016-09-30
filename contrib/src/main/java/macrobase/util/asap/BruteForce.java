@@ -31,7 +31,7 @@ public class BruteForce extends SmoothingParam {
         Stopwatch sw = Stopwatch.createStarted();
         int maxWindow = (int) (windowRange / binSize / 10);
 
-        double maxRecall = 0;
+        double minVar = Double.MAX_VALUE;
         pointsChecked = 0;
         if (stepSize > 0) {
             for (int w = 1; w < maxWindow; w += stepSize) {
@@ -41,13 +41,34 @@ public class BruteForce extends SmoothingParam {
                 swTransform.shutdown();
                 List<Datum> windows = swTransform.getStream().drain();
                 double recall = metrics.weightedRecall(windows, w, 1);
-                if (recall > thresh && recall > maxRecall) {
-                    maxRecall = recall;
+                double var = metrics.smoothness(windows, 1);
+                if (recall > thresh && var < minVar) {
+                    minVar = var;
                     windowSize = w;
                 }
                 pointsChecked += 1;
             }
-        } 
+        } else {
+            name = "BinarySearch";
+            int head = 1;
+            int tail = maxWindow + 1;
+            while (head < tail) {
+                int w = (head + tail) / 2;
+                conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
+                swTransform = new BatchSlidingWindowTransform(conf, binSize);
+                swTransform.consume(currWindow);
+                swTransform.shutdown();
+                List<Datum> windows = swTransform.getStream().drain();
+                double recall = metrics.weightedRecall(windows, w, 1);
+                if (recall >= thresh ) {
+                        windowSize = w;
+                    head = w + 1;
+                } else {
+                    tail = w - 1;
+                }
+                pointsChecked += 1;
+            }
+        }
 
         runtimeMS = sw.elapsed(TimeUnit.MILLISECONDS);
     }

@@ -1,60 +1,41 @@
-contrib/src/main/java/macrobase/util/asap/Experiment.javapackage macrobase.util.asap;
+package macrobase.util.asap;
 
-import macrobase.analysis.transform.aggregate.AggregateConf;
-import macrobase.conf.MacroBaseConf;
-import macrobase.datamodel.Datum;
 
 import java.io.PrintWriter;
+import java.util.Arrays;
 
 public class StreamingExperiment extends Experiment {
     public StreamingExperiment(int datasetID, int resolution, double thresh) throws Exception {
         super(datasetID, resolution, thresh);
         result = new PrintWriter(
-                String.format("contrib/src/main/java/macrobase/util/asap/results/%s_stream.txt",
-                        DataSources.TABLE_NAMES.get(datasetID)), "UTF-8");
+                String.format("contrib/src/main/java/macrobase/util/asap/results/%d_stream.txt",
+                        datasetID, "UTF-8"));
         plot = new PrintWriter(
-                String.format("contrib/src/main/java/macrobase/util/asap/plots/%s_stream.txt",
-                        DataSources.TABLE_NAMES.get(datasetID)), "UTF-8");
+                String.format("contrib/src/main/java/macrobase/util/asap/plots/%d_stream.txt",
+                        datasetID, "UTF-8"));
     }
 
     public void run(SmoothingParam s, long duration) throws Exception {
         while (s.dataStream.remaining() > 0) {
             s.findRangeSlide();
-            export(s);
             s.updateWindow(duration);
         }
-    }
-
-    public void onDemandRun(SmoothingParam s, long duration) throws Exception {
-        while (s.dataStream.remaining() > 0) {
-            s.updateWindow(duration);
-        }
-        s.findRangeSlide();
-        export(s);
-    }
-
-    public void export(SmoothingParam s) throws Exception {
-        MacroBaseConf conf = new MacroBaseConf();
-        conf.set(MacroBaseConf.TIME_COLUMN, 0);
-        conf.set(AggregateConf.AGGREGATE_TYPE, AggregateConf.AggregateType.AVG);
-        // Raw series
-        plot.println("Original");
-        plot.println(String.format("%d %d %d", s.binSize, 1, 1));
-        for (Datum d : s.currWindow) {
-            plot.println(String.format("%f,%f", d.metrics().getEntry(0), d.metrics().getEntry(1)));
-        }
-        // Compute window and output to file
         computeWindow(conf, s);
     }
 
     public static void main(String[] args) throws Exception {
         int resolution = Integer.parseInt(args[0]);
         datasetID = Integer.parseInt(args[1]);
+        int interval_in_sec = Integer.parseInt(args[2]);
+        long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
+        long binSize = roundBinSize(windowRange, resolution);
         StreamingExperiment exp = new StreamingExperiment(datasetID, resolution, 0.7);
-        //exp.run(bf, bf.binSize);
-        //exp.run(asap, bf.binSize);
-        exp.onDemandRun(grid, 7 * 24 * 3600 * 1000L);
-        exp.onDemandRun(asap, 7 * 24 * 3600 * 1000L);
+        exportRaw();
+        exp.run(asap, interval_in_sec * 1000L);
+        for (int s : Arrays.asList(1, 2, 5, 10)) {
+            grid = new BruteForce(conf, windowRange, binSize, 0.7, s);
+            exp.run(grid, interval_in_sec * 1000L);
+        }
         result.close();
         plot.close();
     }
