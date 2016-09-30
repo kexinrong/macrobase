@@ -45,6 +45,10 @@ public class Metrics {
         return values;
     }
 
+    public double variance(List<Datum> data) {
+        return variance.evaluate(stripDatum(data));
+    }
+
     public double smoothness(List<Datum> data, int dist) {
         double[] slopes = consecutiveSlops(stripDatum(data), dist);
         //double[] slopes = consecutiveSlops(zscores(data), dist);

@@ -8,11 +8,11 @@ public class BatchExperiment extends Experiment {
     public BatchExperiment(int datasetID, int resolution, double thresh) throws Exception {
         super(datasetID, resolution, thresh);
         result = new PrintWriter(
-                String.format("contrib/src/main/java/macrobase/util/asap/results/%s_batch.txt",
-                        DataSources.TABLE_NAMES.get(datasetID)), "UTF-8");
+                String.format("contrib/src/main/java/macrobase/util/asap/results/%d_batch.txt",
+                        datasetID), "UTF-8");
         plot = new PrintWriter(
-                String.format("contrib/src/main/java/macrobase/util/asap/plots/%s_batch.txt",
-                        DataSources.TABLE_NAMES.get(datasetID)), "UTF-8");
+                String.format("contrib/src/main/java/macrobase/util/asap/plots/%d_batch.txt",
+                        datasetID), "UTF-8");
     }
 
     public static void main(String[] args) throws Exception {

@@ -9,7 +9,7 @@ public abstract class ACF {
     public int period;
     protected List<Datum> data;
     protected List<Integer> peaks;
-    protected double[] correlations;
+    public double[] correlations;
 
     protected List<Double> stripDatum(List<Datum> datum) {
         List<Double> values = new ArrayList<>();
