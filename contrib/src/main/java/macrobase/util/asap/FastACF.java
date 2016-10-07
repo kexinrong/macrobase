@@ -8,18 +8,19 @@ import org.apache.commons.math3.transform.TransformType;
 
 import java.util.List;
 
-public class OnePassACF extends ACF {
+public class FastACF extends ACF {
     private FastFourierTransformer fftTran = new FastFourierTransformer(DftNormalization.STANDARD);
 
-    public OnePassACF() {}
+    public FastACF() {}
 
     public void evaluate(List<Datum> data) {
         List<Double> metrics = stripDatum(data);
         int n = metrics.size();
+        double m = new Metrics().mean(data);
         Double padding = Math.pow(2, 32 - Integer.numberOfLeadingZeros(2 * n - 1));
         double[] values = new double[padding.intValue()];
-        // Pad with 0
-        for (int i = 0; i < n; i++) { values[i] = metrics.get(i); }
+        // Pad with 0, zero mean data
+        for (int i = 0; i < n; i++) { values[i] = metrics.get(i) - m; }
         Complex[] fft = fftTran.transform(values, TransformType.FORWARD);
         for (int i = 0; i < fft.length; i ++) {
             fft[i] = fft[i].multiply(fft[i].conjugate());

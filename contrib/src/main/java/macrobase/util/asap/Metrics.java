@@ -28,11 +28,15 @@ public class Metrics {
         originalOutlyingness = outlyingness(originalOutliers);
     }
 
-    private double[] consecutiveSlops(double[] values, int dist) {
+    private double[] diffs(double[] values, boolean isAbs) {
         double[] slopes = new double[values.length - 1];
         for (int i = 1; i < values.length; i++) {
-            slopes[i - 1] = (values[i] - values[i - 1]) / dist;
-        }
+            if (isAbs) {
+                slopes[i - 1] = Math.abs(values[i] - values[i - 1]);
+            } else {
+                slopes[i - 1] = (values[i] - values[i - 1]);
+            }
+                    }
         return slopes;
     }
 
@@ -49,10 +53,13 @@ public class Metrics {
         return variance.evaluate(stripDatum(data));
     }
 
-    public double smoothness(List<Datum> data, int dist) {
-        double[] slopes = consecutiveSlops(stripDatum(data), dist);
-        //double[] slopes = consecutiveSlops(zscores(data), dist);
-        return variance.evaluate(slopes);
+    public double mean(List<Datum> data) {
+        return mean.evaluate(stripDatum(data));
+    }
+
+    public double smoothness(List<Datum> data) {
+        double[] slopes = diffs(stripDatum(data), false);
+        return Math.sqrt(variance.evaluate(slopes));
     }
 
     public double kurtosis(List<Datum> data) {
@@ -80,23 +87,6 @@ public class Metrics {
         return outliers;
     }
 
-    public double recall(List<Datum> data, int range, int slide) {
-        if (originalOutliers.size() == 0 || data.size() == 0)
-            return 0;
-
-        List<Pair<Integer, Double>> aggregateOutliers = getOutliers(data);
-        double preserved = 0;
-        for (Pair<Integer, Double> o : originalOutliers) {
-            for (Pair<Integer, Double> a : aggregateOutliers) {
-                if (o.getFirst() >= a.getFirst() * slide && o.getFirst() - a.getFirst() * slide < range) {
-                    preserved += 1;
-                    break;
-                }
-            }
-        }
-        return preserved / originalOutliers.size();
-    }
-
     public double outlyingness(List<Pair<Integer, Double>> outliers) {
         double outlyingness = 0;
         for (Pair<Integer, Double> o : outliers) {
@@ -104,7 +94,6 @@ public class Metrics {
         }
         return outlyingness;
     }
-
 
     public double weightedRecall(List<Datum> data, int range, int slide) {
         if (originalOutliers.size() == 0 || data.size() == 0)

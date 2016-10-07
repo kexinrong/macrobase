@@ -50,7 +50,7 @@ public class RunningACF extends ACF {
         runningVar.update(old_data, new_data);
 
         for (int lag = 1; lag < maxLag; lag ++) {
-            for (int i = 0; i < new_data.size(); i++) {
+            for (int i = 0; i < length - lag; i++) {
                 y0ykSum[lag - 1] += data.get(length - lag + i) + new_data.get(i) -
                         data.get(lag + i) - old_data.get(i);
                 y0ykMul[lag - 1] += data.get(length - lag + i) * new_data.get(i) -

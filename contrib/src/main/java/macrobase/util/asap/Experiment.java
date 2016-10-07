@@ -72,13 +72,14 @@ public class Experiment {
         sw.consume(s.currWindow);
         sw.shutdown();
         List<Datum> windows = sw.getStream().drain();
-        double var = s.metrics.smoothness(windows, s.slideSize);
-        double recall = s.metrics.weightedRecall(windows, s.windowSize, s.slideSize);
+        double smoothness = s.metrics.smoothness(windows);
+        double kurtosis = s.metrics.kurtosis(windows);
         // Output to file
         result.println(s.name);
-        result.println(String.format("ws: %d, ss: %d, var: %f, recall: %f", s.windowSize, s.slideSize, var, recall));
-        result.println(String.format("#points: %d, #searches: %d, runtime: %d(ms)",
-                s.numPoints, s.pointsChecked, s.runtimeMS));
+        result.println(String.format("ws: %d, ss: %d, var: %f, kurtosis:%f",
+                s.windowSize, s.slideSize, smoothness, kurtosis));
+        result.println(String.format("#points: %d, #searches: %d, runtime: %d(micro sec), update interval: %d",
+                s.numPoints, s.pointsChecked, s.runtimeMS, s.updateInterval));
         result.println();
         plot.println(s.name);
         plot.println(String.format("%d %d %d", s.binSize, s.windowSize, s.slideSize));

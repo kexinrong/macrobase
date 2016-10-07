@@ -1,6 +1,7 @@
 package macrobase.util.asap;
 
 import com.google.common.base.Stopwatch;
+import jdk.nashorn.internal.runtime.ECMAException;
 import macrobase.analysis.transform.BatchSlidingWindowTransform;
 import macrobase.conf.ConfigurationException;
 import macrobase.conf.MacroBaseConf;
@@ -18,11 +19,13 @@ import java.util.concurrent.TimeUnit;
 public class BruteForce extends SmoothingParam {
     public int stepSize;
     private BatchSlidingWindowTransform swTransform;
+    private FileWriter fw;
 
     public BruteForce(MacroBaseConf conf, long windowRange,
                       long binSize, double thresh, int stepSize) throws Exception {
         super(conf, windowRange, binSize, thresh);
         this.stepSize = stepSize;
+        fw = new FileWriter(new File("param_sweep.csv"));
     }
 
     @Override
@@ -31,51 +34,55 @@ public class BruteForce extends SmoothingParam {
         Stopwatch sw = Stopwatch.createStarted();
         int maxWindow = (int) (windowRange / binSize / 10);
 
-        double minVar = Double.MAX_VALUE;
+        double minObj = Double.MAX_VALUE;
+        double original_kurtosis = metrics.kurtosis(currWindow);
         pointsChecked = 0;
-        if (stepSize > 0) {
-            for (int w = 1; w < maxWindow; w += stepSize) {
-                conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
-                swTransform = new BatchSlidingWindowTransform(conf, binSize);
-                swTransform.consume(currWindow);
-                swTransform.shutdown();
-                List<Datum> windows = swTransform.getStream().drain();
-                double recall = metrics.weightedRecall(windows, w, 1);
-                double var = metrics.smoothness(windows, 1);
-                if (recall > thresh && var < minVar) {
-                    minVar = var;
-                    windowSize = w;
-                }
-                pointsChecked += 1;
+        for (int w = 1; w < maxWindow; w += stepSize) {
+            conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
+            swTransform = new BatchSlidingWindowTransform(conf, binSize);
+            swTransform.consume(currWindow);
+            swTransform.shutdown();
+            List<Datum> windows = swTransform.getStream().drain();
+            double kurtosis = metrics.kurtosis(windows);
+            double smoothness = metrics.smoothness(windows);
+            if (kurtosis > original_kurtosis && smoothness < minObj) {
+                minObj = smoothness;
+                windowSize = w;
             }
-        } else {
-            name = "BinarySearch";
-            int head = 1;
-            int tail = maxWindow + 1;
-            while (head < tail) {
-                int w = (head + tail) / 2;
-                conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
-                swTransform = new BatchSlidingWindowTransform(conf, binSize);
-                swTransform.consume(currWindow);
-                swTransform.shutdown();
-                List<Datum> windows = swTransform.getStream().drain();
-                double recall = metrics.weightedRecall(windows, w, 1);
-                if (recall >= thresh ) {
-                        windowSize = w;
-                    head = w + 1;
-                } else {
-                    tail = w - 1;
-                }
-                pointsChecked += 1;
-            }
+
+            pointsChecked += 1;
         }
 
-        runtimeMS = sw.elapsed(TimeUnit.MILLISECONDS);
+        runtimeMS = sw.elapsed(TimeUnit.MICROSECONDS);
+    }
+
+    public void paramSweep() throws Exception {
+        fw.write(String.format("window,recall,std,kurtosis,var\n"));
+        RunningACF acf = new RunningACF(currWindow);
+        int maxWindow = (int) (windowRange / binSize / 10);
+        for (int w = 1; w < maxWindow; w ++) {
+            conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
+            swTransform = new BatchSlidingWindowTransform(conf, binSize);
+            swTransform.consume(currWindow);
+            swTransform.shutdown();
+            List<Datum> windows = swTransform.getStream().drain();
+            double recall = metrics.weightedRecall(windows, w, 1);
+            double std = Math.sqrt(metrics.smoothness(windows));
+            double var = metrics.variance(windows);
+            double mean = metrics.mean(windows);
+            double kurtosis = metrics.kurtosis(windows);
+            fw.write(String.format("%d,%f,%f,%f,%f,%f\n", w, recall, std, kurtosis,
+                    var * w * w, mean));
+        }
+        fw.close();
     }
 
     public void updateWindow(long interval) throws ConfigurationException {
         List<Datum> data = dataStream.drainDuration(interval);
-        numPoints = data.size();
+        if (updateInterval == 0) {
+            updateInterval = data.size();
+        }
+        numPoints += data.size();
         BatchSlidingWindowTransform sw = new BatchSlidingWindowTransform(conf, binSize);
         sw.consume(data);
         sw.shutdown();
