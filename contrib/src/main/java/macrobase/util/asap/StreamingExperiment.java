@@ -6,7 +6,7 @@ import java.util.Arrays;
 
 public class StreamingExperiment extends Experiment {
     public StreamingExperiment(int datasetID, int resolution, double thresh) throws Exception {
-        super(datasetID, resolution, thresh);
+        super(datasetID, resolution, thresh, true);
         result = new PrintWriter(
                 String.format("contrib/src/main/java/macrobase/util/asap/results/%d_stream.txt",
                         datasetID, "UTF-8"));
@@ -31,11 +31,11 @@ public class StreamingExperiment extends Experiment {
         long binSize = roundBinSize(windowRange, resolution);
         StreamingExperiment exp = new StreamingExperiment(datasetID, resolution, 0.7);
         exportRaw();
-        exp.run(asap, interval_in_sec * 1000L);
         for (int s : Arrays.asList(1, 2, 5, 10)) {
-            grid = new BruteForce(conf, windowRange, binSize, 0.7, s);
+            grid = new BruteForce(conf, windowRange, binSize, 0.7, s, true);
             exp.run(grid, interval_in_sec * 1000L);
         }
+        exp.run(asap, interval_in_sec * 1000L);
         result.close();
         plot.close();
     }

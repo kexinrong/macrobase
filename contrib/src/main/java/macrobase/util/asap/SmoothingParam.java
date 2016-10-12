@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SmoothingParam {
-    public static int OUTLIER_THRESH = 4;
     public MacroBaseConf conf;
     public Metrics metrics;
     public int windowSize = 1;
@@ -20,7 +19,6 @@ public class SmoothingParam {
     public long binSize;
     public TimeDatumStream dataStream;
     public List<Datum> currWindow;
-    public List<Pair<Integer, Datum>> extremes = new ArrayList<>();
     public String name;
     protected long windowRange;
     protected double thresh;
@@ -29,12 +27,15 @@ public class SmoothingParam {
     public int updateInterval = 0;
     public int pointsChecked = 0;
     private int timeColumn;
+    protected boolean isStream;
 
-    public SmoothingParam(MacroBaseConf conf, long windowRange, long binSize, double thresh) throws Exception {
+    public SmoothingParam(MacroBaseConf conf, long windowRange, long binSize,
+                          double thresh, boolean isStream) throws Exception {
         this.conf = conf;
         this.windowRange = windowRange;
         this.binSize = binSize;
         this.thresh = thresh;
+        this.isStream = isStream;
         // Ingest
         CSVIngester ingester = new CSVIngester(conf);
         List<Datum> data = ingester.getStream().drain();
@@ -51,26 +52,8 @@ public class SmoothingParam {
         sw.shutdown();
         List<Datum> panes = sw.getStream().drain();
         this.currWindow = panes;
-        //preFilter();
         metrics = new Metrics(panes);
         numPoints = window.size();
-    }
-
-    private void preFilter() {
-        double[] zscores = new Metrics().zscores(currWindow);
-        for (int i = 0; i < zscores.length; i ++) {
-            if (zscores[i] > OUTLIER_THRESH) {
-                extremes.add(new Pair<>(i, currWindow.get(i)));
-                Datum d;
-                if (i > 0) {
-                    d = new Datum(currWindow.get(i - 1));
-                } else {
-                    d = new Datum(currWindow.get(i + 1));
-                }
-                d.metrics().setEntry(timeColumn, currWindow.get(i).getTime(timeColumn));
-                currWindow.set(i, d);
-            }
-        }
     }
 
     public void findRangeSlide() throws Exception {};

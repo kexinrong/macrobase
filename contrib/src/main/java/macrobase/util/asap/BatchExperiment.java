@@ -6,7 +6,7 @@ import java.util.Arrays;
 public class BatchExperiment extends Experiment {
 
     public BatchExperiment(int datasetID, int resolution, double thresh) throws Exception {
-        super(datasetID, resolution, thresh);
+        super(datasetID, resolution, thresh, false);
         result = new PrintWriter(
                 String.format("contrib/src/main/java/macrobase/util/asap/results/%d_batch.txt",
                         datasetID), "UTF-8");
@@ -16,13 +16,18 @@ public class BatchExperiment extends Experiment {
     }
 
     public static void ASAP_VS_Grid() throws Exception {
-        asap.findRangeSlide();
-        computeWindow(exportConf, asap);
-        for (int s : Arrays.asList(1, 2, 5, 10)) {
+        boolean isWarmup = true;
+        for (int s : Arrays.asList(1, 1, 2, 5, 10)) {
             grid.stepSize = s;
             grid.findRangeSlide();
-            computeWindow(exportConf, grid);
+            if (isWarmup) {
+                isWarmup = false;
+            } else {
+                computeWindow(exportConf, grid);
+            }
         }
+        asap.findRangeSlide();
+        computeWindow(exportConf, asap);
     }
     public static void runPeaks() throws Exception {
         FastACF acf = new FastACF();

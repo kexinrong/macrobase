@@ -1,11 +1,13 @@
 package macrobase.util.asap;
 import macrobase.datamodel.Datum;
+import org.apache.commons.math3.stat.correlation.Covariance;
 import org.apache.commons.math3.stat.descriptive.moment.Kurtosis;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.moment.Variance;
 import org.apache.commons.math3.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Metrics {
@@ -13,8 +15,7 @@ public class Metrics {
     private Kurtosis kurtosis;
     private Variance variance;
     private Mean mean;
-    private List<Pair<Integer, Double>> originalOutliers;
-    private double originalOutlyingness;
+    public double originalKurtosis;
 
     public Metrics() {
         kurtosis = new Kurtosis();
@@ -24,8 +25,11 @@ public class Metrics {
 
     public Metrics(List<Datum> data) {
         this();
-        originalOutliers = getOutliers(data);
-        originalOutlyingness = outlyingness(originalOutliers);
+        originalKurtosis = kurtosis(data);
+    }
+
+    public void updateKurtosis(List<Datum> data) {
+        originalKurtosis = kurtosis(data);
     }
 
     private double[] diffs(double[] values, boolean isAbs) {
@@ -34,7 +38,7 @@ public class Metrics {
             if (isAbs) {
                 slopes[i - 1] = Math.abs(values[i] - values[i - 1]);
             } else {
-                slopes[i - 1] = (values[i] - values[i - 1]);
+                slopes[i - 1] = values[i] - values[i - 1];
             }
                     }
         return slopes;
@@ -85,22 +89,5 @@ public class Metrics {
                 outliers.add(new Pair<>(i, zscores[i]));
         }
         return outliers;
-    }
-
-    public double outlyingness(List<Pair<Integer, Double>> outliers) {
-        double outlyingness = 0;
-        for (Pair<Integer, Double> o : outliers) {
-            outlyingness += (Math.abs(o.getSecond()) - ZSCORE_THRESH);
-        }
-        return outlyingness;
-    }
-
-    public double weightedRecall(List<Datum> data, int range, int slide) {
-        if (originalOutliers.size() == 0 || data.size() == 0)
-            return 0;
-        List<Pair<Integer, Double>> aggregateOutliers = getOutliers(data);
-        double preservedOutlyingness = outlyingness(aggregateOutliers);
-
-        return preservedOutlyingness / originalOutlyingness;
     }
 }

@@ -19,13 +19,13 @@ public class Experiment {
     protected static PrintWriter result;
     protected static PrintWriter plot;
 
-    public Experiment(int datasetID, int resolution, double thresh) throws Exception {
+    public Experiment(int datasetID, int resolution, double thresh, boolean isStream) throws Exception {
         this.datasetID = datasetID;
         conf = getConf(datasetID);
         long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
         long binSize = roundBinSize(windowRange, resolution);
-        grid = new BruteForce(conf, windowRange, binSize, thresh, 1);
-        asap = new ASAP(conf, windowRange, binSize, thresh);
+        grid = new BruteForce(conf, windowRange, binSize, thresh, 1, isStream);
+        asap = new ASAP(conf, windowRange, binSize, thresh, isStream);
 
         exportConf = new MacroBaseConf();
         exportConf.set(MacroBaseConf.TIME_COLUMN, 0);
