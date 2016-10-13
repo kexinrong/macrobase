@@ -12,9 +12,9 @@ import java.util.List;
 
 public class Metrics {
     private static double ZSCORE_THRESH = 2;
-    private Kurtosis kurtosis;
-    private Variance variance;
-    private Mean mean;
+    public Kurtosis kurtosis;
+    public Variance variance;
+    public Mean mean;
     public double originalKurtosis;
 
     public Metrics() {
@@ -64,6 +64,12 @@ public class Metrics {
     public double smoothness(List<Datum> data) {
         double[] slopes = diffs(stripDatum(data), false);
         return Math.sqrt(variance.evaluate(slopes));
+    }
+
+    public double cv(List<Datum> data) {
+        double[] slopes = diffs(stripDatum(data), false);
+        double[] abs_slopes = diffs(stripDatum(data), true);
+        return Math.sqrt(variance.evaluate(slopes)) / mean.evaluate(abs_slopes);
     }
 
     public double kurtosis(List<Datum> data) {

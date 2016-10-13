@@ -1,6 +1,5 @@
 package macrobase.util.asap;
 
-import com.sun.tools.javac.util.Pair;
 import macrobase.analysis.transform.BatchSlidingWindowTransform;
 import macrobase.analysis.transform.aggregate.AggregateConf;
 import macrobase.conf.MacroBaseConf;
@@ -8,7 +7,6 @@ import macrobase.conf.MacroBaseDefaults;
 import macrobase.datamodel.Datum;
 import macrobase.ingest.CSVIngester;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class SmoothingParam {
@@ -54,6 +52,7 @@ public class SmoothingParam {
         this.currWindow = panes;
         metrics = new Metrics(panes);
         numPoints = window.size();
+        System.gc();
     }
 
     public void findRangeSlide() throws Exception {};

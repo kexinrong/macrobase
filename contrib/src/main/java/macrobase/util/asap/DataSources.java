@@ -9,9 +9,9 @@ import java.util.Map;
 
 public class DataSources {
     public static Map<Integer, String> TABLE_NAMES = ImmutableMap.<Integer, String>builder()
-            .put(1, "iowa_liquor").put(2, "nyc_taxi").put(3, "boston_taxi_pickups")
-            .put(4, "fridge_data").put(5, "campaign_expenditures").put(6, "vmware_data")
-            .put(7, "google_network").put(8, "art_daily_jumpsdown").put(9, "TravelTime_387")
+            .put(1, "iowa_liquor").put(2, "nyc_taxi")
+            .put(5, "campaign_expenditures")
+            .put(8, "art_daily_jumpsdown").put(9, "TravelTime_387")
             .put(10, "ethylene_CO").put(11, "daily-minimum-temperatures-in-me")
             .put(12, "number-of-daily-births-in-quebec")
             .put(13, "internet-traffic-data-in-bits-fr")
@@ -21,7 +21,6 @@ public class DataSources {
             .put(17, "online_retail_price")
             .put(18, "building_count")
             .put(19, "Twitter_volume_AAPL")
-            .put(20, "nyc_taxi_30")
             .put(21, "cpu_utilization_asg_misconfiguration")
             .put(22, "machine_temperature_system_failure")
             .put(23, "nyc_taxi_nov")
@@ -29,6 +28,10 @@ public class DataSources {
             .put(25, "trafficData158655")
             .put(26, "trafficData158805")
             .put(27, "nyc_taxi_oct_nov")
+            .put(3, "boston_taxi_pickups")
+            .put(4, "fridge_data")
+            .put(6, "vmware_data")
+            .put(7, "google_network")
             .build();
     public static Map<Integer, Long> WINDOW_RANGES = ImmutableMap.<Integer, Long>builder()
             .put(1, 180 * 24 * 3600 * 1000L).put(2, 20 * 24 * 3600 * 1000L)
@@ -57,6 +60,7 @@ public class DataSources {
             .put(27, 60 * 24 * 3600 * 1000L) // 30 days
             .build();
     public static Map<Integer, String> TIME_FORMATS = ImmutableMap.<Integer, String>builder()
+            .put(5, "yyyy-MM-dd")
             .put(10, "sec")
             .put(11, "MM/dd/yy")
             .put(12, "MM/dd/yy")

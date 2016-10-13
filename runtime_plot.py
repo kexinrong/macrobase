@@ -5,9 +5,10 @@ import numpy as np
 
 bashCommand = 'java -Xms10G -Xmx256G -XX:+UseParallelGC -XX:ParallelGCThreads=32 -cp "core/target/classes:frontend/target/classes:frontend/src/main/resources/:contrib/target/classes:assembly/target/*:$CLASSPATH" macrobase.util.asap.BatchExperiment %d %d'
 N = 5
+results_dir = "batch_results/"
 
 def plot_tpt(dataset_id):
-	f = open("batch_%d.txt" % dataset_id, "r")
+	f = open(results_dir + "batch_%d.txt" % dataset_id, "r")
 	tpt = {}
 	res = []
 	key = "ASAP"
@@ -51,10 +52,10 @@ def plot_tpt(dataset_id):
 	plt.title("Throughput VS Resolution")
 	plt.grid(True)
 	plt.legend(loc=3)
-	plt.savefig("tpt_%d.png" % dataset_id, format="png")
+	plt.savefig(results_dir + "tpt_%d.png" % dataset_id, format="png")
 
 def plot_quality(dataset_id):
-	f = open("batch_%d.txt" % dataset_id, "r")
+	f = open(results_dir + "batch_%d.txt" % dataset_id, "r")
 	variances = {}
 	res = []
 	key = "ASAP"
@@ -94,10 +95,10 @@ def plot_quality(dataset_id):
 	plt.title("Quality VS Resolution")
 	plt.grid(True)
 	plt.legend(loc=1)
-	plt.savefig("quality_%d.png" % dataset_id, format="png")
+	plt.savefig(results_dir + "quality_%d.png" % dataset_id, format="png")
 
 def run():
-	f = open("batch_%d.txt" % dataset_id, "w")
+	f = open(results_dir + "batch_%d.txt" % dataset_id, "w")
 	for res in range(400, 4200, 400):
 		print "Resolution: %d" %res
 		f.write("%d\n" %res)
@@ -113,7 +114,11 @@ def run():
 	f.close()
 
 if __name__ == '__main__':
-	dataset_id = int(sys.argv[1])
-	run()
-	plot_tpt(dataset_id)
-	plot_quality(dataset_id)
+	dataset_ids = [5, 12]
+	#dataset_ids = [9, 11, 12, 13, 14, 15, 17, 18, 19, 21, 22, 24, 27, 10, 16]
+	#[5, 8, 9]
+	for dataset_id in dataset_ids:
+		print dataset_id
+		run()
+		plot_tpt(dataset_id)
+		plot_quality(dataset_id)

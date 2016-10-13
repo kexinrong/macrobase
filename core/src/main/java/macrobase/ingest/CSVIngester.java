@@ -59,7 +59,11 @@ public class CSVIngester extends DataIngester {
                     metricVec.setEntry(vecPos, parsedDate.getTime());
                 }
             } else {
-                metricVec.setEntry(vecPos, Double.parseDouble(record.get(metric)));
+                if (metric.equals("NULL")) {
+                    metricVec.setEntry(vecPos, 1);
+                } else {
+                    metricVec.setEntry(vecPos, Double.parseDouble(record.get(metric)));
+                }
             }
             vecPos += 1;
         }

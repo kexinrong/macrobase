@@ -77,5 +77,5 @@ def run():
 
 if __name__ == '__main__':
 	dataset_id = int(sys.argv[1])
-	#run()
+	run()
 	plot_tpt(dataset_id)

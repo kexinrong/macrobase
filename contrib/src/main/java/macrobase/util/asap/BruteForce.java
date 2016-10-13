@@ -31,12 +31,14 @@ public class BruteForce extends SmoothingParam {
     @Override
     public void findRangeSlide() throws Exception {
         Stopwatch sw = Stopwatch.createStarted();
+        metrics.updateKurtosis(currWindow);
         name = String.format("Grid%d", stepSize);
         int maxWindow = (int) (windowRange / binSize / 10);
 
         double minObj = Double.MAX_VALUE;
+        windowSize = 1;
         if (!isStream) { pointsChecked = 0; }
-        for (int w = 1; w < maxWindow; w += stepSize) {
+        for (int w = 1; w < maxWindow + 1; w += stepSize) {
             conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
             swTransform = new BatchSlidingWindowTransform(conf, binSize);
             swTransform.consume(currWindow);
@@ -48,7 +50,6 @@ public class BruteForce extends SmoothingParam {
                 minObj = smoothness;
                 windowSize = w;
             }
-
             pointsChecked += 1;
         }
         if (isStream) {
@@ -59,20 +60,22 @@ public class BruteForce extends SmoothingParam {
     }
 
     public void paramSweep() throws Exception {
-        fw.write(String.format("window, std, kurtosis, kurtosis * w^4, var * w^2, mean\n"));
+        fw.write(String.format("window, std, kurtosis, kurtosis * w^4, var * w^2, mean, acf\n"));
         int maxWindow = (int) (windowRange / binSize / 10);
+        FastACF acf = new FastACF();
+        acf.evaluate(currWindow);
         for (int w = 1; w < maxWindow; w ++) {
             conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
             swTransform = new BatchSlidingWindowTransform(conf, binSize);
             swTransform.consume(currWindow);
             swTransform.shutdown();
             List<Datum> windows = swTransform.getStream().drain();
-            double std = Math.sqrt(metrics.smoothness(windows));
+            double std = metrics.smoothness(windows);
             double var = metrics.variance(windows);
             double mean = metrics.mean(windows);
             double kurtosis = metrics.kurtosis(windows);
-            fw.write(String.format("%d,%f,%f,%f,%f,%f\n", w, std, kurtosis,
-                    kurtosis * w * w * w * w, var * w * w, mean));
+            fw.write(String.format("%d,%f,%f,%f,%f,%f,%f\n", w, std, kurtosis,
+                    kurtosis * w * w * w * w, var * w * w, mean, acf.correlations[w]));
         }
         fw.close();
     }
@@ -89,6 +92,5 @@ public class BruteForce extends SmoothingParam {
         List<Datum> newPanes = sw.getStream().drain();
         currWindow.addAll(newPanes);
         currWindow.remove(currWindow.subList(0, newPanes.size()));
-        metrics.updateKurtosis(currWindow);
     }
 }

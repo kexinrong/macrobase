@@ -6,16 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class ACF {
-    public int period;
     protected List<Datum> data;
     protected List<Integer> peaks;
     public double[] correlations;
 
-    protected List<Double> stripDatum(List<Datum> datum) {
-        List<Double> values = new ArrayList<>();
-        for (Datum d : datum) {
-            values.add(d.metrics().getEntry(1));
+    protected double[] stripDatum(List<Datum> datum) {
+        double[] values = new double[datum.size()];
+        for (int i = 0; i < datum.size(); i++) {
+            values[i] = datum.get(i).metrics().getEntry(1);
         }
+
         return values;
     }
 
