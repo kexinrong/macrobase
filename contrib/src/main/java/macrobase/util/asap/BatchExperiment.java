@@ -1,57 +1,68 @@
 package macrobase.util.asap;
 
+import macrobase.datamodel.Datum;
+
 import java.io.PrintWriter;
-import java.util.Arrays;
 
 public class BatchExperiment extends Experiment {
+    protected BruteForce grid2;
+    protected BruteForce grid10;
+
 
     public BatchExperiment(int datasetID, int resolution, double thresh) throws Exception {
-        super(datasetID, resolution, thresh, false);
+        super(datasetID, resolution, thresh);
+        long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
+        long binSize = roundBinSize(windowRange, resolution);
+        grid2 = new BruteForce(conf, windowRange, binSize, thresh, 2);
+        grid10 = new BruteForce(conf, windowRange, binSize, thresh, 10);
+    }
+
+    public static void ASAP_VS_Grid(BatchExperiment exp) throws Exception {
+        System.gc();
+        exp.grid.findRangeSlide();
+        computeWindow(exportConf, exp.grid, true);
+
+        System.gc();
+        exp.grid2.findRangeSlide();
+        computeWindow(exportConf, exp.grid2, true);
+
+        System.gc();
+        exp.grid10.findRangeSlide();
+        computeWindow(exportConf, exp.grid10, true);
+
+        System.gc();
+        exp.asap.findRangeSlide();
+        computeWindow(exportConf, exp.asap, true);
+
+        System.gc();
+        exp.bs.findRangeSlide();
+        computeWindow(exportConf, exp.bs, true);
+    }
+
+    public static void paramSweep(BatchExperiment exp) throws Exception {
+        exp.grid.paramSweep();
+    }
+
+    public static void main(String[] args) throws Exception {
+        int resolution = Integer.parseInt(args[0]);
+        datasetID = Integer.parseInt(args[1]);
         result = new PrintWriter(
                 String.format("contrib/src/main/java/macrobase/util/asap/results/%d_batch.txt",
                         datasetID), "UTF-8");
         plot = new PrintWriter(
                 String.format("contrib/src/main/java/macrobase/util/asap/plots/%d_batch.txt",
                         datasetID), "UTF-8");
-    }
 
-    public static void ASAP_VS_Grid() throws Exception {
-        boolean isWarmup = true;
-        for (int s : Arrays.asList(1, 1, 2, 5, 10)) {
-            grid.stepSize = s;
-            grid.findRangeSlide();
-            if (isWarmup) {
-                isWarmup = false;
-            } else {
-                computeWindow(exportConf, grid);
-            }
+        BatchExperiment exp = new BatchExperiment(datasetID, resolution, 1);
+        // Raw series
+        plot.println("Original");
+        plot.println(String.format("%d %d %d", exp.grid.binSize, 1, 1));
+        for (Datum d : exp.grid.currWindow) {
+            plot.println(String.format("%f,%f", d.metrics().getEntry(0), d.metrics().getEntry(1)));
         }
-        asap.findRangeSlide();
-        computeWindow(exportConf, asap);
-    }
-    public static void runPeaks() throws Exception {
-        FastACF acf = new FastACF();
-        acf.evaluate(asap.currWindow);
-        for (int i = 0; i < acf.peaks.size(); i ++) {
-            asap.windowSize = acf.peaks.get(i);
-            asap.name = String.format("Manual%d", asap.windowSize);
-            computeWindow(exportConf, asap);
-        }
-    }
 
-    public static void paramSweep() throws Exception {
-        grid.paramSweep();
-    }
-
-    public static void main(String[] args) throws Exception {
-        int resolution = Integer.parseInt(args[0]);
-        datasetID = Integer.parseInt(args[1]);
-        BatchExperiment exp = new BatchExperiment(datasetID, resolution, 0.95);
-        exportRaw();
-
-        ASAP_VS_Grid();
-        //runPeaks();
-        //paramSweep();
+        ASAP_VS_Grid(exp);
+        //paramSweep(exp);
 
         result.close();
         plot.close();

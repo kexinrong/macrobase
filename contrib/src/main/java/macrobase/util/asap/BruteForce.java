@@ -22,8 +22,8 @@ public class BruteForce extends SmoothingParam {
     private FileWriter fw;
 
     public BruteForce(MacroBaseConf conf, long windowRange,
-                      long binSize, double thresh, int stepSize, boolean isStream) throws Exception {
-        super(conf, windowRange, binSize, thresh, isStream);
+                      long binSize, double thresh, int stepSize) throws Exception {
+        super(conf, windowRange, binSize, thresh);
         this.stepSize = stepSize;
         fw = new FileWriter(new File("param_sweep.csv"));
     }
@@ -35,15 +35,10 @@ public class BruteForce extends SmoothingParam {
         name = String.format("Grid%d", stepSize);
         int maxWindow = (int) (windowRange / binSize / 10);
 
-        double minObj = Double.MAX_VALUE;
+        minObj = Double.MAX_VALUE;
         windowSize = 1;
-        if (!isStream) { pointsChecked = 0; }
-        for (int w = 1; w < maxWindow + 1; w += stepSize) {
-            conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
-            swTransform = new BatchSlidingWindowTransform(conf, binSize);
-            swTransform.consume(currWindow);
-            swTransform.shutdown();
-            List<Datum> windows = swTransform.getStream().drain();
+        for (int w = 2; w < maxWindow + 1; w += stepSize) {
+            List<Datum> windows = transform(w);
             double kurtosis = metrics.kurtosis(windows);
             double smoothness = metrics.smoothness(windows);
             if (kurtosis > metrics.originalKurtosis && smoothness < minObj) {
@@ -52,11 +47,7 @@ public class BruteForce extends SmoothingParam {
             }
             pointsChecked += 1;
         }
-        if (isStream) {
-            runtimeMS += sw.elapsed(TimeUnit.MICROSECONDS);
-        } else {
-            runtimeMS = sw.elapsed(TimeUnit.MICROSECONDS);
-        }
+        runtimeMS += sw.elapsed(TimeUnit.MICROSECONDS);
     }
 
     public void paramSweep() throws Exception {
@@ -65,11 +56,7 @@ public class BruteForce extends SmoothingParam {
         FastACF acf = new FastACF();
         acf.evaluate(currWindow);
         for (int w = 1; w < maxWindow; w ++) {
-            conf.set(MacroBaseConf.TIME_WINDOW, w * binSize);
-            swTransform = new BatchSlidingWindowTransform(conf, binSize);
-            swTransform.consume(currWindow);
-            swTransform.shutdown();
-            List<Datum> windows = swTransform.getStream().drain();
+            List<Datum> windows = transform(w);
             double std = metrics.smoothness(windows);
             double var = metrics.variance(windows);
             double mean = metrics.mean(windows);
@@ -85,12 +72,21 @@ public class BruteForce extends SmoothingParam {
         if (updateInterval == 0) {
             updateInterval = data.size();
         }
+        numUpdates += 1;
         numPoints += data.size();
-        BatchSlidingWindowTransform sw = new BatchSlidingWindowTransform(conf, binSize);
-        sw.consume(data);
-        sw.shutdown();
-        List<Datum> newPanes = sw.getStream().drain();
-        currWindow.addAll(newPanes);
-        currWindow.remove(currWindow.subList(0, newPanes.size()));
+        if (binSize > 0) { // Pixel-aware aggregate
+            conf.set(MacroBaseConf.TIME_WINDOW, binSize);
+            BatchSlidingWindowTransform sw = new BatchSlidingWindowTransform(conf, binSize);
+            Stopwatch watch = Stopwatch.createStarted();
+            sw.consume(data);
+            sw.shutdown();
+            List<Datum> newPanes = sw.getStream().drain();
+            currWindow.addAll(newPanes);
+            currWindow.subList(0, newPanes.size()).clear();
+            runtimeMS += watch.elapsed(TimeUnit.MICROSECONDS);
+        } else {
+            currWindow.addAll(data);
+            currWindow.subList(0, data.size()).clear();
+        }
     }
 }

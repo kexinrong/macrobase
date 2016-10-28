@@ -108,8 +108,8 @@ public class CSVIngester extends DataIngester {
 
             int numRows = 0;
             while (rawIterator.hasNext()) {
+                CSVRecord record = rawIterator.next();
                 try {
-                    CSVRecord record = rawIterator.next();
                     Datum curRow = parseRecord(record);
                     dataStream.add(curRow);
                     numRows++;

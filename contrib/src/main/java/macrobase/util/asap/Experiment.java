@@ -11,21 +11,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Experiment {
-    protected static BruteForce grid;
-    protected static ASAP asap;
+    protected BruteForce grid;
+    protected ASAP asap;
+    protected BinarySearch bs;
     protected static MacroBaseConf conf;
     protected static MacroBaseConf exportConf;
     protected static int datasetID;
     protected static PrintWriter result;
     protected static PrintWriter plot;
 
-    public Experiment(int datasetID, int resolution, double thresh, boolean isStream) throws Exception {
+    public Experiment(int datasetID) throws Exception {
+        this.datasetID = datasetID;
+        conf = getConf(datasetID);
+
+        exportConf = new MacroBaseConf();
+        exportConf.set(MacroBaseConf.TIME_COLUMN, 0);
+        exportConf.set(AggregateConf.AGGREGATE_TYPE, AggregateConf.AggregateType.AVG);
+    }
+
+
+    public Experiment(int datasetID, int resolution, double thresh) throws Exception {
         this.datasetID = datasetID;
         conf = getConf(datasetID);
         long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
         long binSize = roundBinSize(windowRange, resolution);
-        grid = new BruteForce(conf, windowRange, binSize, thresh, 1, isStream);
-        asap = new ASAP(conf, windowRange, binSize, thresh, isStream);
+        grid = new BruteForce(conf, windowRange, binSize, thresh, 1);
+        System.gc();
+        asap = new ASAP(conf, windowRange, binSize, thresh);
+        System.gc();
+        bs = new BinarySearch(conf, windowRange, binSize, thresh);
 
         exportConf = new MacroBaseConf();
         exportConf.set(MacroBaseConf.TIME_COLUMN, 0);
@@ -34,9 +48,12 @@ public class Experiment {
 
     public static long roundBinSize(long windowRange, int resolution) {
         long binSize = windowRange / resolution;
-        // Round to the nearest multilples of 10 min
-        if (binSize > 600000) {
-            binSize = (binSize / 600000 + 1) * 600000;
+        long dayInSec = 24 * 3600 * 1000L;
+
+        if (binSize > dayInSec) { // Round to the nearest day
+            binSize = Math.round(binSize * 1.0 / dayInSec) * dayInSec;
+        } else if (binSize > 600000) { // Round to the nearest multilples of 10 min
+            binSize = Math.round(binSize * 1.0 / 600000) * 600000;
         } else if (binSize > 1000) {
             binSize = (binSize / 1000 + 1) * 1000;
         }
@@ -57,16 +74,7 @@ public class Experiment {
         return conf;
     }
 
-    protected static void exportRaw() {
-        // Raw series
-        plot.println("Original");
-        plot.println(String.format("%d %d %d", grid.binSize, 1, 1));
-        for (Datum d : grid.currWindow) {
-            plot.println(String.format("%f,%f", d.metrics().getEntry(0), d.metrics().getEntry(1)));
-        }
-    }
-
-    protected static void computeWindow(MacroBaseConf conf, SmoothingParam s) throws ConfigurationException {
+    protected static void computeWindow(MacroBaseConf conf, SmoothingParam s, boolean exportPlot) throws ConfigurationException {
         conf.set(MacroBaseConf.TIME_WINDOW, s.windowSize * s.binSize);
         BatchSlidingWindowTransform sw = new BatchSlidingWindowTransform(conf, s.slideSize * s.binSize);
         sw.consume(s.currWindow);
@@ -78,13 +86,15 @@ public class Experiment {
         result.println(s.name);
         result.println(String.format("ws: %d, ss: %d, var: %f, kurtosis:%f",
                 s.windowSize, s.slideSize, smoothness, kurtosis));
-        result.println(String.format("#points: %d, #searches: %d, runtime: %d(micro sec), update interval: %d",
-                s.numPoints, s.pointsChecked, s.runtimeMS, s.updateInterval));
+        result.println(String.format("#points: %d, #searches: %d, runtime: %d(micro sec), update interval: %d, num updates: %d",
+                s.numPoints, s.pointsChecked, s.runtimeMS, s.updateInterval, s.numUpdates));
         result.println();
-        plot.println(s.name);
-        plot.println(String.format("%d %d %d", s.binSize, s.windowSize, s.slideSize));
-        for (Datum d : windows) {
-            plot.println(String.format("%f,%f", d.metrics().getEntry(0), d.metrics().getEntry(1)));
+        if (exportPlot) {
+            plot.println(s.name);
+            plot.println(String.format("%d %d %d", s.binSize, s.windowSize, s.slideSize));
+            for (Datum d : windows) {
+                plot.println(String.format("%f,%f", d.metrics().getEntry(0), d.metrics().getEntry(1)));
+            }
         }
     }
 }

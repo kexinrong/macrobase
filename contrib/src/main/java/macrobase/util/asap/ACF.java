@@ -21,7 +21,7 @@ public abstract class ACF {
 
     protected void findPeaks() {
         peaks = new ArrayList<>();
-        int max_peak = 0;
+        int max_peak = 1;
         if (correlations.length > 1) {
             boolean positive = (correlations[1] > correlations[0]);
             for (int i = 2; i < correlations.length; i++) {
@@ -36,6 +36,5 @@ public abstract class ACF {
                 }
             }
         }
-        if (peaks.size() == 0) { peaks.add(1); }
     }
 }
