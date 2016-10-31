@@ -17,31 +17,27 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class BruteForce extends SmoothingParam {
-    public int stepSize;
-    private BatchSlidingWindowTransform swTransform;
+    public int stepSize = 1;
     private FileWriter fw;
 
     public BruteForce(MacroBaseConf conf, long windowRange,
-                      long binSize, double thresh, int stepSize) throws Exception {
-        super(conf, windowRange, binSize, thresh);
-        this.stepSize = stepSize;
-        fw = new FileWriter(new File("param_sweep.csv"));
+                      long binSize, double thresh, boolean preAggregate) throws Exception {
+        super(conf, windowRange, binSize, thresh, preAggregate);
     }
 
     @Override
     public void findRangeSlide() throws Exception {
         Stopwatch sw = Stopwatch.createStarted();
         metrics.updateKurtosis(currWindow);
-        name = String.format("Grid%d", stepSize);
-        int maxWindow = (int) (windowRange / binSize / 10);
 
         minObj = Double.MAX_VALUE;
+        int N = currWindow.size();
         windowSize = 1;
-        for (int w = 2; w < maxWindow + 1; w += stepSize) {
+        for (int w = 2; w < N / maxWindow + 1; w += stepSize) {
             List<Datum> windows = transform(w);
             double kurtosis = metrics.kurtosis(windows);
             double smoothness = metrics.smoothness(windows);
-            if (kurtosis > metrics.originalKurtosis && smoothness < minObj) {
+            if (kurtosis >= thresh * metrics.originalKurtosis && smoothness < minObj) {
                 minObj = smoothness;
                 windowSize = w;
             }
@@ -51,11 +47,12 @@ public class BruteForce extends SmoothingParam {
     }
 
     public void paramSweep() throws Exception {
+        fw = new FileWriter(new File("param_sweep.csv"));
         fw.write(String.format("window, std, kurtosis, kurtosis * w^4, var * w^2, mean, acf\n"));
-        int maxWindow = (int) (windowRange / binSize / 10);
-        FastACF acf = new FastACF();
+        FastACF acf = new FastACF(maxWindow);
         acf.evaluate(currWindow);
-        for (int w = 1; w < maxWindow; w ++) {
+        int N = currWindow.size();
+        for (int w = 1; w <  N / maxWindow + 1; w ++) {
             List<Datum> windows = transform(w);
             double std = metrics.smoothness(windows);
             double var = metrics.variance(windows);
@@ -74,7 +71,7 @@ public class BruteForce extends SmoothingParam {
         }
         numUpdates += 1;
         numPoints += data.size();
-        if (binSize > 0) { // Pixel-aware aggregate
+        if (preAggregate) { // Pixel-aware aggregate
             conf.set(MacroBaseConf.TIME_WINDOW, binSize);
             BatchSlidingWindowTransform sw = new BatchSlidingWindowTransform(conf, binSize);
             Stopwatch watch = Stopwatch.createStarted();

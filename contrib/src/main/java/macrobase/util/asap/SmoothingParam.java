@@ -31,14 +31,17 @@ public class SmoothingParam {
     private int timeColumn;
     protected BatchSlidingWindowTransform swTransform;
     protected double minObj;
+    protected boolean preAggregate;
+    public int maxWindow = 10;
 
 
     public SmoothingParam(MacroBaseConf conf, long windowRange, long binSize,
-                          double thresh) throws Exception {
+                          double thresh, boolean preAggregate) throws Exception {
         this.conf = conf;
         this.windowRange = windowRange;
         this.binSize = binSize;
         this.thresh = thresh;
+        this.preAggregate = preAggregate;
         // Ingest
         CSVIngester ingester = new CSVIngester(conf);
         List<Datum> data = ingester.getStream().drain();
@@ -46,7 +49,7 @@ public class SmoothingParam {
         dataStream = new TimeDatumStream(data, timeColumn);
         List<Datum> window = dataStream.drainDuration(windowRange);
         // Bin
-        if (binSize > 0) {
+        if (preAggregate) {
             MacroBaseConf binConf = new MacroBaseConf();
             binConf.set(MacroBaseConf.TIME_WINDOW, binSize);
             binConf.set(MacroBaseConf.TIME_COLUMN, 0);
@@ -75,11 +78,11 @@ public class SmoothingParam {
     }
 
     protected void binarySearch(int head, int tail) throws ConfigurationException  {
-        while (head < tail) {
+        while (head <= tail) {
             int w = (head + tail) / 2;
             List<Datum> windows = transform(w);
             double kurtosis = metrics.kurtosis(windows);
-            if (kurtosis >= metrics.originalKurtosis) {
+            if (kurtosis >= thresh * metrics.originalKurtosis) {
                 double smoothness = metrics.smoothness(windows);
                 if (smoothness < minObj) {
                     windowSize = w;

@@ -3,11 +3,11 @@ package macrobase.util.asap;
 
 import java.io.PrintWriter;
 
-public class AddOne extends Experiment {
+public class Pixel extends Experiment {
     private BruteForce gridRaw;
-    private ASAP asapLazy;
+    private ASAP asapRaw;
 
-    public AddOne(int datasetID, int resolution, double thresh) throws Exception {
+    public Pixel(int datasetID, int resolution, double thresh) throws Exception {
         super(datasetID);
 
         long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
@@ -17,47 +17,44 @@ public class AddOne extends Experiment {
         gridRaw.name = "GridRaw";
         System.gc();
         grid = new BruteForce(conf, windowRange, binSize, thresh, true);
-        grid.name = "Grid+pixel";
+        grid.name = "Grid";
         System.gc();
         asap = new ASAP(conf, windowRange, binSize, thresh, true);
-        asapLazy = new ASAP(conf, windowRange, binSize, thresh, true);
-        asapLazy.name = "ASAPLazy";
+        System.gc();
+        asapRaw = new ASAP(conf, windowRange, DataSources.INTERVALS.get(datasetID), thresh, false);
+        asapRaw.name = "asapRaw";
     }
 
-    public static void run(SmoothingParam s, long duration) throws Exception {
+    public static void run(SmoothingParam s) throws Exception {
         System.gc();
-        while (s.dataStream.remaining() > 0) {
-            s.findRangeSlide();
-            s.updateWindow(duration);
-        }
+        s.findRangeSlide();
         computeWindow(exportConf, s, false);
     }
 
 
-    public static void addOne(AddOne exp) throws Exception {
-        long binSize = DataSources.INTERVALS.get(datasetID);
+    public static void pixel(Pixel exp) throws Exception {
         // Grid search on raw time series
-        run(exp.gridRaw, binSize);
+        run(exp.gridRaw);
 
         // Grid search on aggregated time series
-        run(exp.grid, binSize);
+        run(exp.grid);
+
+        // ASAP on raw time series
+        run(exp.asapRaw);
 
         // ASAP on aggregated time series
-        run(exp.asap, binSize);
-
-        // ASAP on aggregated time series with on demand update
-        run(exp.asapLazy, 24 * 60 * 60 * 1000L);
+        run(exp.asap);
     }
 
     public static void main(String[] args) throws Exception {
         int resolution = Integer.parseInt(args[0]);
         datasetID = Integer.parseInt(args[1]);
         result = new PrintWriter(
-                String.format("contrib/src/main/java/macrobase/util/asap/results/%d_addone.txt",
+                String.format("contrib/src/main/java/macrobase/util/asap/results/%d_pixel.txt",
                         datasetID), "UTF-8");
 
-        AddOne exp = new AddOne(datasetID, resolution, 1);
-        addOne(exp);
+        Pixel exp = new Pixel(datasetID, resolution, 1);
+        pixel(exp);
 
         result.close();
     }

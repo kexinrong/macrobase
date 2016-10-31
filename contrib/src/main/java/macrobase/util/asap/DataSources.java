@@ -27,7 +27,8 @@ public class DataSources {
             .put(4, "fridge_data")
             .put(5, "campaign_expenditures")
             .put(6, "vmware_data")
-            .put(7, "google_network")
+            .put(7, "google_network_48")
+            .put(28, "google_network_sim")
             .build();
     public static Map<Integer, Long> WINDOW_RANGES = ImmutableMap.<Integer, Long>builder()
             .put(1, 180 * 24 * 3600 * 1000L).put(2, 20 * 24 * 3600 * 1000L)
@@ -37,8 +38,8 @@ public class DataSources {
             .put(9, 60 * 24 * 3600 * 1000L)
             //.put(10, 42087550L)
             .put(10, 36000000L)
-            .put(14,   7820928000000L) // 248 years
-            //.put(14, 7568640000000L) // 240 years
+            //.put(14, 7820928000000L) // 248 years
+            .put(14, 7568640000000L) // 240 years
             .put(15, 25 * 7 * 24 * 3600 * 1000L) // 25 weeks
             //.put(15, 4 * 7 * 24 * 3600 * 1000L) // 15 weeks
             .put(16, 47 * 30 * 24 * 3600 * 1000L) // 47 months
@@ -52,11 +53,18 @@ public class DataSources {
             .put(23, 90 * 24 * 3600 * 1000L) // 90 days
             .put(24, 100 * 24 * 3600 * 1000L) // 100 days
             .put(27, 75 * 24 * 3600 * 1000L) // 75 days
+            .put(28, 7 * 24 * 3600 * 1000L)
             .build();
     public static Map<Integer, Long> INTERVALS = ImmutableMap.<Integer, Long>builder()
+            .put(8, 5 * 60 * 1000L)
             .put(10, 10L)
+            .put(14, 30 * 24 * 60 * 60 * 1000L)
+            .put(15, 5 * 60 * 1000L)
+            .put(19, 5 * 60 * 1000L)
             .put(22, 5 * 60 * 1000L)
             .put(24, 5 * 60 * 1000L)
+            .put(27, 30 * 60 * 1000L)
+            .put(28, 5 * 60 * 1000L)
             .build();
     public static Map<Integer, String> TIME_FORMATS = ImmutableMap.<Integer, String>builder()
             .put(5, "yyyy-MM-dd")
@@ -74,6 +82,7 @@ public class DataSources {
             .put(23, "MM/dd/yy hh:mm")
             .put(24, "yyyy-MM-dd'T'hh:mm:ss")
             .put(27, "MM/dd/yy hh:mm")
+            .put(28, "yyyy-MM-dd hh:mm:ss")
             .build();
     public static Map<Integer, List<String>> COLUMN_NAMES = ImmutableMap.<Integer, List<String>>builder()
             .put(1, new ArrayList<>(Arrays.asList(" date"," total")))
@@ -98,5 +107,6 @@ public class DataSources {
             .put(23, new ArrayList<>(Arrays.asList("timestamp", "value")))
             .put(24, new ArrayList<>(Arrays.asList("TIMESTAMP", "vehicleCount")))
             .put(27, new ArrayList<>(Arrays.asList("timestamp", "value")))
+            .put(28, new ArrayList<>(Arrays.asList("timestamp", "value")))
             .build();
 }

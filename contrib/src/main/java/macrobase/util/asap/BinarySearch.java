@@ -18,8 +18,8 @@ import java.util.concurrent.TimeUnit;
 
 public class BinarySearch extends SmoothingParam {
     public BinarySearch(MacroBaseConf conf, long windowRange,
-                      long binSize, double thresh) throws Exception {
-        super(conf, windowRange, binSize, thresh);
+                      long binSize, double thresh, boolean preAggregate) throws Exception {
+        super(conf, windowRange, binSize, thresh, preAggregate);
     }
 
     @Override

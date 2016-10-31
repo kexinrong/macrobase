@@ -3,6 +3,7 @@ package macrobase.util.asap;
 import macrobase.datamodel.Datum;
 
 import java.io.PrintWriter;
+import java.util.Arrays;
 
 public class BatchExperiment extends Experiment {
     protected BruteForce grid2;
@@ -13,22 +14,24 @@ public class BatchExperiment extends Experiment {
         super(datasetID, resolution, thresh);
         long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
         long binSize = roundBinSize(windowRange, resolution);
-        grid2 = new BruteForce(conf, windowRange, binSize, thresh, 2);
-        grid10 = new BruteForce(conf, windowRange, binSize, thresh, 10);
+        /*grid2 = new BruteForce(conf, windowRange, binSize, thresh, true);
+        grid2.stepSize = 2;
+        grid2.name = "Grid2";
+        grid10 = new BruteForce(conf, windowRange, binSize, thresh, true);
+        grid10.stepSize = 10;
+        grid10.name = "Grid10";
+        grid.name = "Grid1";*/
     }
 
     public static void ASAP_VS_Grid(BatchExperiment exp) throws Exception {
-        System.gc();
-        exp.grid.findRangeSlide();
-        computeWindow(exportConf, exp.grid, true);
-
-        System.gc();
-        exp.grid2.findRangeSlide();
-        computeWindow(exportConf, exp.grid2, true);
-
-        System.gc();
-        exp.grid10.findRangeSlide();
-        computeWindow(exportConf, exp.grid10, true);
+        for (int s : Arrays.asList(1, 2, 10)) {
+            System.gc();
+            exp.grid.stepSize = s;
+            exp.grid.name = String.format("Grid%d", s);
+            exp.grid.runtimeMS = 0;
+            exp.grid.findRangeSlide();
+            computeWindow(exportConf, exp.grid, true);
+        }
 
         System.gc();
         exp.asap.findRangeSlide();

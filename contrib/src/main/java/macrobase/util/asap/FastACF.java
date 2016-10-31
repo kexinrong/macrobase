@@ -10,8 +10,11 @@ import java.util.List;
 
 public class FastACF extends ACF {
     private FastFourierTransformer fftTran = new FastFourierTransformer(DftNormalization.STANDARD);
+    protected int maxWindow;
 
-    public FastACF() {}
+    public FastACF(int maxWindow) {
+        this.maxWindow = maxWindow;
+    }
 
     public void evaluate(List<Datum> data) {
         double[] metrics = stripDatum(data);
@@ -27,7 +30,7 @@ public class FastACF extends ACF {
         }
         fft = fftTran.transform(fft, TransformType.INVERSE);
 
-        int maxLag = n / 10 + 1;
+        int maxLag = n / maxWindow + 1;
         correlations = new double[maxLag];
         for (int i = 1; i < maxLag; i++) {
             correlations[i] = fft[i].getReal() / fft[0].getReal();

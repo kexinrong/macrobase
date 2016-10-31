@@ -35,11 +35,11 @@ public class Experiment {
         conf = getConf(datasetID);
         long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
         long binSize = roundBinSize(windowRange, resolution);
-        grid = new BruteForce(conf, windowRange, binSize, thresh, 1);
+        grid = new BruteForce(conf, windowRange, binSize, thresh, true);
         System.gc();
-        asap = new ASAP(conf, windowRange, binSize, thresh);
+        asap = new ASAP(conf, windowRange, binSize, thresh, true);
         System.gc();
-        bs = new BinarySearch(conf, windowRange, binSize, thresh);
+        bs = new BinarySearch(conf, windowRange, binSize, thresh, true);
 
         exportConf = new MacroBaseConf();
         exportConf.set(MacroBaseConf.TIME_COLUMN, 0);
