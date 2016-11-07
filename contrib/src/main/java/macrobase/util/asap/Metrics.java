@@ -63,7 +63,7 @@ public class Metrics {
         double[] slopes = diffs(stripDatum(data), false);
         double r = Math.sqrt(variance.evaluate(slopes));
         slopes = null;
-        return r;
+        return r * data.size();
     }
 
     private double kurtosisRaw(List<Datum> data) {

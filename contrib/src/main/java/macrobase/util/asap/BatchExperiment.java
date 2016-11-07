@@ -6,21 +6,10 @@ import java.io.PrintWriter;
 import java.util.Arrays;
 
 public class BatchExperiment extends Experiment {
-    protected BruteForce grid2;
-    protected BruteForce grid10;
 
 
     public BatchExperiment(int datasetID, int resolution, double thresh) throws Exception {
         super(datasetID, resolution, thresh);
-        long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
-        long binSize = roundBinSize(windowRange, resolution);
-        /*grid2 = new BruteForce(conf, windowRange, binSize, thresh, true);
-        grid2.stepSize = 2;
-        grid2.name = "Grid2";
-        grid10 = new BruteForce(conf, windowRange, binSize, thresh, true);
-        grid10.stepSize = 10;
-        grid10.name = "Grid10";
-        grid.name = "Grid1";*/
     }
 
     public static void ASAP_VS_Grid(BatchExperiment exp) throws Exception {

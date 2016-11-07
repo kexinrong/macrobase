@@ -49,13 +49,19 @@ public class Experiment {
     public static long roundBinSize(long windowRange, int resolution) {
         long binSize = windowRange / resolution;
         long dayInSec = 24 * 3600 * 1000L;
+        long hourInSec = 3600 * 1000L;
 
         if (binSize > dayInSec) { // Round to the nearest day
             binSize = Math.round(binSize * 1.0 / dayInSec) * dayInSec;
+        } else if (binSize > hourInSec) {
+            binSize = Math.round(binSize * 1.0 / hourInSec) * hourInSec;
         } else if (binSize > 600000) { // Round to the nearest multilples of 10 min
             binSize = Math.round(binSize * 1.0 / 600000) * 600000;
         } else if (binSize > 1000) {
             binSize = (binSize / 1000 + 1) * 1000;
+        }
+        if (binSize < DataSources.INTERVALS.get(datasetID)) {
+            binSize = DataSources.INTERVALS.get(datasetID);
         }
         return binSize;
     }

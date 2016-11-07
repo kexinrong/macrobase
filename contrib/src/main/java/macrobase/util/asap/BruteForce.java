@@ -37,7 +37,7 @@ public class BruteForce extends SmoothingParam {
             List<Datum> windows = transform(w);
             double kurtosis = metrics.kurtosis(windows);
             double smoothness = metrics.smoothness(windows);
-            if (kurtosis >= thresh * metrics.originalKurtosis && smoothness < minObj) {
+            if ((kurtosis + 3) >= thresh * (metrics.originalKurtosis + 3) && smoothness < minObj) {
                 minObj = smoothness;
                 windowSize = w;
             }
