@@ -1,11 +1,12 @@
 from matplotlib import pyplot as plt
-import sys
+import sys, os
 import subprocess
 import numpy as np
+import datetime
 
 bashCommand = 'java -Xms10G -Xmx256G -XX:+UseParallelGC -XX:ParallelGCThreads=32 -cp "core/target/classes:frontend/target/classes:frontend/src/main/resources/:contrib/target/classes:assembly/target/*:$CLASSPATH" macrobase.util.asap.BatchExperiment %d %d'
 N = 1
-results_dir = "batch_results/"
+results_dir = "evals/batch_results/%s/" %(str(datetime.datetime.now()))
 
 avg_tpt = {}
 avg_variances = {}
@@ -120,7 +121,7 @@ def plot_results(res):
 def run():
 	f = open(results_dir + "batch_%d.txt" % dataset_id, "w")
 	for res in range(500, 5100, 500):
-		print "Resolution: %d" %res
+		print ("Resolution: %d" %res)
 		f.write("%d\n" %res)
 		for i in range(N):
 			process = subprocess.Popen((bashCommand % (res, dataset_id)).split(), stdout=subprocess.PIPE)
@@ -134,11 +135,11 @@ def run():
 	f.close()
 
 if __name__ == '__main__':
-	#dataset_ids = [8, 14, 15, 19, 27, 22, 24, 10]
-	dataset_ids = [15, 19, 22, 24, 10]
+	os.mkdir(results_dir)
+	dataset_ids = [8, 42, 36, 14, 15, 19, 27, 22, 24, 10]
 	res = []
 	for dataset_id in dataset_ids:
-		print dataset_id
-		#run()
+		print (dataset_id)
+		run()
 		res = parse_results(dataset_id)
 	plot_results(res)

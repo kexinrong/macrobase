@@ -26,24 +26,30 @@ public class AddOne extends Experiment {
 
     public static void run(SmoothingParam s, long duration) throws Exception {
         System.gc();
+        int count = 0;
         while (s.dataStream.remaining() > 0) {
-            s.findRangeSlide();
-            s.updateWindow(duration);
+            if (!s.name.equals("GridRaw") || count < 20) {
+                s.findRangeSlide();
+                s.updateWindow(duration);
+            } else {
+                s.dataStream.drainDuration(duration);
+            }
+            count += 1;
         }
+        result.println(count);
         computeWindow(exportConf, s, false);
     }
 
 
     public static void addOne(AddOne exp) throws Exception {
-        long binSize = DataSources.INTERVALS.get(datasetID);
         // Grid search on raw time series
-        run(exp.gridRaw, binSize);
+        run(exp.gridRaw, exp.gridRaw.binSize);
 
         // Grid search on aggregated time series
-        run(exp.grid, binSize);
+        run(exp.grid, exp.grid.binSize);
 
         // ASAP on aggregated time series
-        run(exp.asap, binSize);
+        run(exp.asap, exp.asap.binSize);
 
         // ASAP on aggregated time series with on demand update
         run(exp.asapLazy, 24 * 60 * 60 * 1000L);

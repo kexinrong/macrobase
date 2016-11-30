@@ -25,9 +25,9 @@ public class ASAP extends SmoothingParam {
         name = "ASAP";
     }
 
-    private int getLowerBoundWindow() throws ConfigurationException {
+    private void checkLastWindow() throws ConfigurationException {
         if (windowSize == 1) {
-            return 1;
+            return;
         }
         // Check window from last frame
         pointsChecked += 1;
@@ -36,11 +36,18 @@ public class ASAP extends SmoothingParam {
         double smoothness = metrics.smoothness(windows);
         if (kurtosis >= metrics.originalKurtosis) {
             minObj = smoothness;
-            return (int)Math.round(windowSize * Math.sqrt((acf.maxACF - 1) / (acf.correlations[windowSize] - 1)));
+            return;
         } else {
             windowSize = 1;
         }
-        return 1;
+    }
+
+    private boolean roughnessGreaterThanOpt(int w) {
+        return Math.sqrt(1 - acf.correlations[w]) * windowSize > Math.sqrt(1 - acf.correlations[windowSize]) * w;
+    }
+
+    private int updateLB(int lowerBoundWindow, int w) {
+        return (int) Math.round(Math.max(w * Math.sqrt((acf.maxACF - 1) / (acf.correlations[w] - 1)), lowerBoundWindow));
     }
 
     @Override
@@ -49,7 +56,11 @@ public class ASAP extends SmoothingParam {
         N = currWindow.size();
 
         minObj = Double.MAX_VALUE;
-        int lowerBoundWindow = getLowerBoundWindow();
+        int lowerBoundWindow = 1;
+        checkLastWindow();
+        if (windowSize > 1) {
+            lowerBoundWindow = updateLB(lowerBoundWindow, windowSize);
+        }
         int largestFeasible = -1;
         if (metrics.originalKurtosis < KURT_THRESH) {
             int j = acf.peaks.size() - 1;
@@ -59,6 +70,8 @@ public class ASAP extends SmoothingParam {
                     continue;
                 } else if (w < lowerBoundWindow || w == 1) {
                     break;
+                } else if (roughnessGreaterThanOpt(w)) {
+                    continue;
                 }
                 List<Datum> windows = transform(w);
                 double kurtosis = metrics.kurtosis(windows);
@@ -69,14 +82,14 @@ public class ASAP extends SmoothingParam {
                         windowSize = w;
                     }
                     if (largestFeasible < 0) { largestFeasible = i; }
-                    lowerBoundWindow = (int) Math.round(Math.max(w * Math.sqrt((acf.maxACF - 1) / (acf.correlations[w] - 1)), lowerBoundWindow));
+                    lowerBoundWindow = updateLB(lowerBoundWindow, w);
                 }
                 pointsChecked += 1;
             }
         }
         // Binary search from max period to largest permitted window size
         int tail = N / maxWindow;
-        if (largestFeasible > 0) {
+        if (largestFeasible >= 0) {
             if (largestFeasible < acf.peaks.size() - 2) { tail = acf.peaks.get(largestFeasible + 1); }
             lowerBoundWindow = Math.max(lowerBoundWindow, acf.peaks.get(largestFeasible) + 1);
         }

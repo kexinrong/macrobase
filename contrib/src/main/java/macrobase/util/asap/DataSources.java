@@ -51,8 +51,10 @@ public class DataSources {
             .put(46, "fig10")
             .put(47, "eeg")
             .put(48, "ltstdb_20221_43")
+            .put(0, "nyc_taxi")
             .build();
     public static Map<Integer, Long> WINDOW_RANGES = ImmutableMap.<Integer, Long>builder()
+            .put(0, 150 * 24 * 3600 * 1000L)
             .put(1, 180 * 24 * 3600 * 1000L).put(2, 20 * 24 * 3600 * 1000L)
             .put(3, 180 * 24 * 3600 * 1000L).put(4, 60 * 24 * 3600 * 1000L)
             .put(5, 180 * 24 * 3600 * 1000L).put(6, 80 * 24 * 3600 * 1000L)
@@ -62,16 +64,16 @@ public class DataSources {
             .put(10, 36000000L)
             .put(14, 7820928000000L) // 248 years
             //.put(14, 7568640000000L) // 240 years
-            .put(15, 25 * 7 * 24 * 3600 * 1000L) // 25 weeks
+            .put(15, 30 * 24 * 3600 * 1000L) // 25 weeks
             //.put(15, 4 * 7 * 24 * 3600 * 1000L) // 15 weeks
             .put(16, 47 * 30 * 24 * 3600 * 1000L) // 47 months
             .put(17, 8 * 30 * 3600 * 1000L) // 8 months
             .put(18, 15 * 7 * 24 * 3600 * 1000L) // 15 weeks
             .put(19, 50 * 24 * 3600 * 1000L) // 50 days
             .put(20, 7 * 30 * 24 * 3600 * 1000L) // 7 months
-            .put(21, 50 * 24 * 3600 * 1000L) // 50 days
+            .put(21, 14 * 24 * 3600 * 1000L) // 50 days
             .put(22, 70 * 24 * 3600 * 1000L) // 70 days
-            //.put(22, 60 * 24 * 3600 * 1000L) // 70 days
+            //.put(22, 63 * 24 * 3600 * 1000L) // 70 days
             .put(23, 90 * 24 * 3600 * 1000L) // 90 days
             .put(24, 100 * 24 * 3600 * 1000L) // 100 days
             .put(27, 75 * 24 * 3600 * 1000L) // 75 days
@@ -103,9 +105,11 @@ public class DataSources {
             .put(14, 30 * 24 * 60 * 60 * 1000L)
             .put(15, 5 * 60 * 1000L)
             .put(19, 5 * 60 * 1000L)
+            .put(21, 5 * 60 * 1000L)
             .put(22, 5 * 60 * 1000L)
             .put(24, 5 * 60 * 1000L)
             .put(27, 30 * 60 * 1000L)
+            .put(0, 30 * 60 * 1000L)
             .put(28, 5 * 60 * 1000L)
             .put(29, 60 * 60 * 1000L)
             .put(30, 24 * 60 * 60 * 1000L)
@@ -131,19 +135,22 @@ public class DataSources {
     public static Map<Integer, String> TIME_FORMATS = ImmutableMap.<Integer, String>builder()
             .put(5, "yyyy-MM-dd")
             .put(6, "MM/dd/yy hh:mm")
+            .put(8, "yyyy-MM-dd HH:mm")
             .put(10, "sec")
             .put(14, "yyyy-MM")
-            .put(15, "MM/dd/yyyy hh:mm")
-            .put(16, "dd/MM/yyyy hh:mm:ss")
-            .put(17, "MM/dd/yyyy hh:mm")
-            .put(18, "MM/dd/yyyy hh:mm:ss")
-            .put(19, "yyyy-MM-dd hh:mm:ss")
-            .put(20, "yyyy-MM-dd hh:mm:ss")
-            .put(21, "yyyy-MM-dd hh:mm:ss")
-            .put(22, "yyyy-MM-dd hh:mm:ss")
+            .put(15, "MM/dd/yyyy HH:mm")
+            .put(16, "dd/MM/yyyy HH:mm:ss")
+            .put(17, "MM/dd/yyyy HH:mm")
+            .put(18, "MM/dd/yyyy HH:mm:ss")
+            .put(19, "yyyy-MM-dd HH:mm:ss")
+            .put(20, "yyyy-MM-dd HH:mm:ss")
+            .put(21, "yyyy-MM-dd HH:mm:ss")
+            //.put(21, "MM/dd/yy HH:mm")
+            .put(22, "yyyy-MM-dd HH:mm:ss")
             .put(23, "MM/dd/yy hh:mm")
-            .put(24, "yyyy-MM-dd'T'hh:mm:ss")
+            .put(24, "yyyy-MM-dd'T'HH:mm:ss")
             .put(27, "MM/dd/yy HH:mm")
+            .put(0, "MM/dd/yy HH:mm")
             .put(28, "yyyy-MM-dd hh:mm:ss")
             .put(29, "MM/dd/yy hh:mm")
             .put(30, "MM/dd/yy")
@@ -189,6 +196,7 @@ public class DataSources {
             .put(23, new ArrayList<>(Arrays.asList("timestamp", "value")))
             .put(24, new ArrayList<>(Arrays.asList("TIMESTAMP", "vehicleCount")))
             .put(27, new ArrayList<>(Arrays.asList("timestamp", "value")))
+            .put(0, new ArrayList<>(Arrays.asList("timestamp", "value")))
             .put(28, new ArrayList<>(Arrays.asList("timestamp", "value")))
             .put(29, new ArrayList<>(Arrays.asList("Date (LST)", "Value")))
             .put(30, new ArrayList<>(Arrays.asList("disb_dt", "amt")))

@@ -61,30 +61,11 @@ public class Metrics {
 
     public double smoothness(List<Datum> data) {
         double[] slopes = diffs(stripDatum(data), false);
-        double r = Math.sqrt(variance.evaluate(slopes));
-        slopes = null;
-        return r * data.size();
-    }
-
-    private double kurtosisRaw(List<Datum> data) {
-        assert(data.get(0).metrics().getDimension() == 2);
-        double mean = 0;
-        double[] values = new double[data.size()];
-        for (int i = 0; i < data.size(); i ++) {
-            mean += data.get(i).metrics().getEntry(1) / data.size();
-        }
-        double var = 0;
-        double kurt = 0;
-        for (int i = 0; i < data.size(); i ++) {
-            var += Math.pow(data.get(i).metrics().getEntry(1) - mean, 2) / data.size();
-            kurt += Math.pow(data.get(i).metrics().getEntry(1) - mean, 4) / data.size();
-        }
-        return kurt / var / var - 3;
+        return Math.sqrt(variance.evaluate(slopes));
     }
 
     public double kurtosis(List<Datum> data) {
         return kurtosis.evaluate(stripDatum(data));
-        //return kurtosisRaw(data);
     }
 
     public double[] zscores(List<Datum> data) {

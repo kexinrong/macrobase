@@ -34,7 +34,7 @@ public abstract class ACF {
                 } else if (positive && correlations[i] > correlations[max_peak]) {
                     max_peak = i;
                 } else if (positive && correlations[i] < correlations[i - 1]) {
-                    if (max_peak > 0 && correlations[max_peak] > ACF_THRESH) {
+                    if (max_peak > 1 && correlations[max_peak] > ACF_THRESH) {
                         peaks.add(max_peak);
                         if (correlations[max_peak] > maxACF) { maxACF = correlations[max_peak]; }
                     }
