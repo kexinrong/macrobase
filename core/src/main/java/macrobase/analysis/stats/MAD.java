@@ -71,7 +71,7 @@ public class MAD extends BatchTrainScore {
             MAD = residuals[(int) Math.ceil(data.size() / 2)];
         }
 
-        if (MAD == 0) {
+        if (Math.abs(MAD) < 1e-5) {
             zeroMADs.inc();
             int lowerTrimmedMeanIndex = (int) (residuals.length * trimmedMeanFallback);
             int upperTrimmedMeanIndex = (int) (residuals.length * (1 - trimmedMeanFallback));
@@ -92,7 +92,11 @@ public class MAD extends BatchTrainScore {
     @Override
     public double score(Datum datum) {
         double point = datum.metrics().getEntry(0);
-        return Math.abs(point - median) / (MAD);
+        if (Math.abs(point - median) < 1e-5) {
+            return 0;
+        } else {
+            return Math.abs(point - median) / (MAD);
+        }
     }
 
     public double getZScoreEquivalent(double zscore) {

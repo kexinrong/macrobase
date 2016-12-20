@@ -53,6 +53,15 @@ public class MBGroupBy extends MBOperator<Datum, Datum> {
             t.add(d);
         }
 
+        // Remove groups that are too small
+        List<List<Integer>> toRemove = new ArrayList<>();
+        for (List<Integer> key : dataMap.keySet()) {
+            if (dataMap.get(key).size() < 50) {
+                toRemove.add(key);
+            }
+        }
+        for (List<Integer> key : toRemove) { dataMap.remove(key); }
+
         for(Map.Entry<List<Integer>, List<Datum>> entry : dataMap.entrySet()) {
             transformMap.get(entry.getKey()).consume(entry.getValue());
         }

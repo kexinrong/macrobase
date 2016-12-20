@@ -1,0 +1,32 @@
+macrobase.query.name: testTasks
+macrobase.pipeline.class: macrobase.analysis.pipeline.CCCohortPipeline
+
+macrobase.loader.attributes: [cc, is_cellular, sender_name, receiver_name]
+macrobase.loader.metrics: [tpt]
+
+pantheon.groupby.attributes: [cc]
+
+macrobase.analysis.transformType: MAD
+
+macrobase.loader.loaderType: POSTGRES_LOADER
+# modify as needed
+macrobase.loader.db.baseQuery: SELECT * FROM pantheon_logs WHERE runtime=30;
+#macrobase.loader.db.user:
+#macrobase.loader.db.password:
+#macrobase.loader.db.database:
+#macrobase.loader.db.url:
+
+macrobase.analysis.minSupport: 0.001
+macrobase.analysis.minOIRatio: 10.0
+
+macrobase.analysis.usePercentile: true
+macrobase.analysis.targetPercentile: 0.99
+
+macrobase.analysis.mcd.alpha: 0.5
+macrobase.analysis.mcd.stoppingDelta: 0.001
+
+logging:
+  level: INFO
+
+  loggers:
+    "macrobase": DEBUG

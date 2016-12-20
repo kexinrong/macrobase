@@ -1,14 +1,24 @@
 package macrobase.analysis.transform;
 
 import macrobase.analysis.pipeline.stream.MBStream;
+import macrobase.conf.ConfigurationException;
+import macrobase.conf.MacroBaseConf;
 import macrobase.datamodel.Datum;
 import org.apache.commons.math3.linear.ArrayRealVector;
 import org.apache.commons.math3.linear.RealVector;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class LinearMetricNormalizer extends FeatureTransform {
     private MBStream<Datum> output = new MBStream<>();
+    private int targetDim = -1;
+
+    public LinearMetricNormalizer() { }
+
+    public LinearMetricNormalizer(int targetDim) {
+        this.targetDim = targetDim;
+    }
 
     @Override
     public void consume(List<Datum> data) {
@@ -34,6 +44,9 @@ public class LinearMetricNormalizer extends FeatureTransform {
         for (Datum d : data) {
             RealVector metrics = d.metrics().copy();
             for (int dim = 0; dim < metrics.getDimension(); ++dim) {
+                if (targetDim >=0 && dim != targetDim) {
+                    continue;
+                }
                 double dimMin = metricWiseMinVec.getEntry(dim);
                 double dimMax = metricWiseMaxVec.getEntry(dim);
 
@@ -43,7 +56,8 @@ public class LinearMetricNormalizer extends FeatureTransform {
                 }
 
                 double cur = metrics.getEntry(dim);
-                metrics.setEntry(dim, (cur - dimMin) / (dimMax - dimMin));
+                //metrics.setEntry(dim, (cur - dimMin) / (dimMax - dimMin));
+                metrics.setEntry(dim, cur / dimMax);
             }
             output.add(new Datum(d, metrics));
         }

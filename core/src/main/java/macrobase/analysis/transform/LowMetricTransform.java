@@ -40,7 +40,8 @@ public class LowMetricTransform extends FeatureTransform {
         for(Datum d : records) {
             for(int idx : toTransform) {
                 double prevVal = d.metrics().getEntry(idx);
-                d.metrics().setEntry(idx, Math.pow(Math.max(prevVal, 0.1), -1));
+                //d.metrics().setEntry(idx, Math.pow(Math.max(prevVal, 0.1), -1));
+                d.metrics().setEntry(idx, Math.pow(prevVal, -1));
             }
 
             output.add(d);
