@@ -35,6 +35,11 @@ public class UserStudy extends Experiment {
         exp.PAA.windowSize = exp.PAA.numPoints / 100;
         exp.PAA.slideSize = exp.PAA.windowSize;
         computeWindow(exportConf, exp.PAA, true);
+
+        // PAA with 800 points
+        exp.PAA.windowSize = exp.PAA.numPoints / 800;
+        exp.PAA.slideSize = exp.PAA.windowSize;
+        computeWindow(exportConf, exp.PAA, true);
     }
 
     public static void main(String[] args) throws Exception {

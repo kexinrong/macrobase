@@ -1,3 +1,5 @@
+contrib/src/test/resources/data/*
+
 *.class
 .classpath
 .project

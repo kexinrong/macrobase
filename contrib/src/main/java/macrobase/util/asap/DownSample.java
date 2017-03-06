@@ -19,7 +19,7 @@ public class DownSample extends Experiment {
             .put(42, 1)
             .put(22, 703)
             .put(24, 2015)
-            .put(36, 1692)
+            .put(36, 423)
             .put(15, 4896)
             .build();
 
@@ -28,19 +28,24 @@ public class DownSample extends Experiment {
             .put(42, 1)
             .put(22, 702)
             .put(24, 2009)
-            .put(36, 828)
+            .put(36, 207)
             .put(15, 4896)
             .build();
 
-    private static ArrayList<Integer> Datasets = new ArrayList<Integer>(Arrays.asList(42, 15, 19, 22, 24, 36));
+    //private static ArrayList<Integer> Datasets = new ArrayList<Integer>(Arrays.asList(42, 15, 19, 22, 24, 36));
+    private static ArrayList<Integer> Datasets = new ArrayList<Integer>(Arrays.asList(36));
     private static ArrayList<Integer> resolutions = new ArrayList<Integer>(
             Arrays.asList(500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000));
+    //private static ArrayList<Integer> resolutions = new ArrayList<Integer>(
+    //        Arrays.asList(2500));
+
 
     public DownSample(int datasetID, double thresh) throws Exception {
         super(datasetID);
         long windowRange = DataSources.WINDOW_RANGES.get(datasetID);
         grid = new BruteForce(conf, windowRange, DataSources.INTERVALS.get(datasetID), thresh, false);
         grid.name = "GridRaw";
+        //grid.binSize = ;
         System.out.println(grid.currWindow.size());
     }
 
@@ -57,6 +62,9 @@ public class DownSample extends Experiment {
         sw.consume(windows);
         sw.shutdown();
         List<Datum> downSampled = sw.getStream().drain();
+        //List<Datum> downSampled = new ArrayList<>();
+        //for (int i = 0; i < windows.size() / ratio; i ++)
+        //    downSampled.add(windows.get(i * ratio));
         if (true) {
             plot.println(s.name);
             plot.println(String.format("%d %d %d", s.binSize, ratio * s.binSize, ratio * s.binSize));
@@ -64,15 +72,23 @@ public class DownSample extends Experiment {
                 plot.println(String.format("%f,%f", d.metrics().getEntry(0), d.metrics().getEntry(1)));
             }
         }
+        System.out.println(s.windowSize);
+        System.out.println(s.slideSize);
+        System.out.println(s.binSize);
+        System.out.println(downSampled.size());
+        System.out.println(s.metrics.kurtosis(downSampled));
         return s.metrics.smoothness(downSampled);
     }
 
     public static void downSample(DownSample exp, int datasetID) throws Exception {
         for (int resolution : resolutions) {
             // Grid Raw
+            //int ratio = (exp.grid.currWindow.size() - GRID_RAW.get(datasetID)) / resolution;
+            exp.grid.binSize = DataSources.INTERVALS.get(datasetID);
             int ratio = (exp.grid.currWindow.size() - GRID_RAW.get(datasetID)) / resolution;
             exp.grid.name = String.format("GridRaw%d", resolution);
             exp.grid.windowSize = GRID_RAW.get(datasetID);
+            exp.grid.slideSize = 1;
             double roughness = getRoughness(exp.grid, ratio);
             result.println(resolution);
             result.println("GridRaw");

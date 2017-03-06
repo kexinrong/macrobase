@@ -38,16 +38,16 @@ public class RemoveOne extends Experiment {
     public static void removeOne(RemoveOne exp) throws Exception {
         long binSize = DataSources.INTERVALS.get(datasetID);
         // ASAP on aggregated time series with on demand update
-        run(exp.asap, 5 * 60 * 1000L);
+        run(exp.asap, 24 * 60 * 60 * 1000L);
 
         // ASAP without on demand update
         run(exp.asapNotLazy, binSize);
 
         // ASAP without pixel
-        run(exp.asapRaw, 5 * 60 * 1000L);
+        run(exp.asapRaw,  24 * 60 * 60 * 1000L);
 
         // ASAP without AC (grid on aggregated series)
-        run(exp.grid, 5 * 60 * 1000L);
+        run(exp.grid, 24 * 60 * 60 * 1000L);
     }
 
 

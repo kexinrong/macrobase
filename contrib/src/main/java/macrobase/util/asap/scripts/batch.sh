@@ -1,0 +1,2 @@
+java ${JAVA_OPTS} -cp "../../../../../../../../assembly/target/*:../../../../../../../../core/target/*:../../../../../../../../frontend/target/*:../../../../../../../../contrib/target/*" macrobase.util.asap.BatchExperiment 2
+python plot_results.py fridge_data_batch
