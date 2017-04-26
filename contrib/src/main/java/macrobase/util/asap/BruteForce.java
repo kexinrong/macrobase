@@ -38,12 +38,48 @@ public class BruteForce extends SmoothingParam {
             double kurtosis = metrics.kurtosis(windows);
             double smoothness = metrics.smoothness(windows);
             if ((kurtosis + 3) >= thresh * (metrics.originalKurtosis + 3) && smoothness < minObj) {
+                System.out.println(String.format("%d %f %f", w, kurtosis + 3, metrics.originalKurtosis + 3));
                 minObj = smoothness;
                 windowSize = w;
             }
             pointsChecked += 1;
         }
         runtimeMS += sw.elapsed(TimeUnit.MICROSECONDS);
+    }
+
+    public int findWindowByRoughness(double roughness) throws Exception {
+        System.out.println(roughness);
+        double delta = Double.MAX_VALUE;
+        int N = currWindow.size();
+        windowSize = 1;
+        for (int w = 2; w < N / 4 + 1; w += stepSize) {
+            List<Datum> windows = transform(w);
+            double s = metrics.smoothness(windows);
+            double k = metrics.kurtosis(windows);
+            System.out.println(String.format("%d %f %f", w, s, k));
+            if (Math.abs(roughness - s) < delta) {
+                delta = Math.abs(roughness - s);
+                windowSize = w;
+            }
+        }
+        return windowSize;
+    }
+
+    public int findWindowByKurtosis(double thresh) throws Exception {
+        minObj = Double.MAX_VALUE;
+        int N = currWindow.size();
+        windowSize = 1;
+        for (int w = 1; w < N / 10 + 1; w += stepSize) {
+            List<Datum> windows = transform(w);
+            double s = metrics.smoothness(windows);
+            double k = metrics.kurtosis(windows);
+            double smoothness = metrics.smoothness(windows);
+            if ((k + 3) >= thresh * (metrics.originalKurtosis + 3) && smoothness < minObj) {
+                minObj = smoothness;
+                windowSize = w;
+            }
+        }
+        return windowSize;
     }
 
     public void paramSweep() throws Exception {
