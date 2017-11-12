@@ -28,6 +28,7 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
     // Default parameters for the summarizer
     private String outlierColumn = "_OUTLIER";
     private double minOutlierSupport = 0.1;
+    private double minRiskRatio = 3.0;
     private List<String> attributes = new ArrayList<>();
     // Default predicate for filtering outlying rows
     private DoublePredicate predicate = d -> d != 0.0;
@@ -80,6 +81,8 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
         this.minOutlierSupport = minSupport;
     }
     public double getMinSupport() { return minOutlierSupport; }
+    public void setMinRiskRatio(double minRiskRatio) { this.minRiskRatio = minRiskRatio; }
+    public double getMinRiskRatio() { return minRiskRatio; }
 
     /**
      * By default, will check for nonzero entries in a column of doubles.
@@ -244,10 +247,8 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
      *          remove unsupported itemset counts
      * */
     private void pruneUnsupported() {
-        HashSet<Set<Integer>> unSupported = new HashSet<>();
-
         // Prune unsupported itemsets in the current pane
-        calcCumSum();
+        HashSet<Set<Integer>> unSupported = new HashSet<>();
         int currPanes = inlierPaneCounts.size();
         for (Set<Integer> itemset : outlierItemsetWindowCount.keySet()) {
             double supportSinceTracked = outlierCountCumSum.get(currPanes) -
@@ -261,6 +262,36 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
         inlierItemsetPaneCount.keySet().removeAll(unSupported);
         outlierItemsetWindowCount.keySet().removeAll(unSupported);
         inlierItemsetWindowCount.keySet().removeAll(unSupported);
+    }
+
+    /* This function checks whether all itemsets that we are currently tracking counts of
+    * still have enough risk ratio (from the pane it first got promoted till now).
+    *
+    * Variables affected:
+    *   - trackingMap: remove lowRR itemset from tracking map
+    *   - outlierItemsetPaneCount, inlierItemsetPaneCount, outlierItemsetWindowCount, inlierItemsetWindowCount:
+    *          remove lowRR itemset counts
+    * */
+    private void pruneLowRR() {
+        // Prune itemsets without high enough risk ratio
+        int currPanes = inlierPaneCounts.size();
+        HashSet<Set<Integer>> lowRR = new HashSet<>();
+        for (Set<Integer> itemset : outlierItemsetWindowCount.keySet()) {
+            int outlierSupport = outlierCountCumSum.get(currPanes) - outlierCountCumSum.get(trackingMap.get(itemset));
+            int inlierSupport = inlierCountCumSum.get(currPanes) - inlierCountCumSum.get(trackingMap.get(itemset));
+            double rr = RiskRatio.compute(inlierItemsetWindowCount.get(itemset),
+                    outlierItemsetWindowCount.get(itemset),
+                    inlierSupport,
+                    outlierSupport);
+            // Add to output if the itemset has sufficient risk ratio
+            if (rr < minRiskRatio) {
+                lowRR.add(itemset);
+            }
+        }
+        outlierItemsetPaneCount.keySet().removeAll(lowRR);
+        inlierItemsetPaneCount.keySet().removeAll(lowRR);
+        outlierItemsetWindowCount.keySet().removeAll(lowRR);
+        inlierItemsetWindowCount.keySet().removeAll(lowRR);
     }
 
     /* Helper function that updates internals to keep track of a promoted itemset. */
@@ -311,7 +342,9 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
         encodeAttributes(df);
         addNewPane();
         // 3. Prune unsupported outlier itemsets
+        calcCumSum();
         pruneUnsupported();
+        pruneLowRR();
         // 4. Compute new frequent outlier itemsets
         addNewFrequent();
         // Add final pane counts to buffer
@@ -320,16 +353,15 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
     }
 
     /**
-     * @param minRiskRatio lowest risk ratio to consider for meaningful explanations.
-     *                     Adjust this to tune the severity (e.g. strength of correlation)
-     *                     of the results returned.
      * @return explanation
      */
-    public Explanation getResults(double minRiskRatio) {
+    public Explanation getResults() {
         long startTime = System.currentTimeMillis();
 
         calcCumSum();
-        int currPanes = outlierPaneCounts.size();
+        pruneUnsupported();
+
+        int currPanes = inlierPaneCounts.size();
         List<AttributeSet> attributeSets = new ArrayList<>();
         for (Set<Integer> itemset : outlierItemsetWindowCount.keySet()) {
             int outlierSupport = outlierCountCumSum.get(currPanes) - outlierCountCumSum.get(trackingMap.get(itemset));
@@ -356,9 +388,4 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
         return explanation;
     }
 
-    /* Use a default risk ratio of 3 if the users don't specify the minimum required risk ratio. */
-    @Override
-    public Explanation getResults() {
-        return getResults(3);
-    }
 }
