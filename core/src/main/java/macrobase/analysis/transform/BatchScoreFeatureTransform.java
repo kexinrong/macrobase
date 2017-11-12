@@ -6,6 +6,7 @@ import macrobase.conf.ConfigurationException;
 import macrobase.conf.MacroBaseConf;
 import macrobase.datamodel.Datum;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BatchScoreFeatureTransform extends FeatureTransform {
@@ -39,8 +40,11 @@ public class BatchScoreFeatureTransform extends FeatureTransform {
 
     @Override
     public void consume(List<Datum> records) {
-        if(requiresTraining)
-            batchTrainScore.train(records);
+        if(requiresTraining) {
+            List<Datum> copy = new ArrayList<>(records);
+            batchTrainScore.train(copy);
+        }
+
         for(Datum d : records) {
             output.add(new Datum(d, batchTrainScore.score(d)));
         }
