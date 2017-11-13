@@ -310,8 +310,9 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
      *      add new frequent itemset counts
      */
     private void addNewFrequent() {
-        if (minOutlierSupport * outlierItemsets.size() < 1) { return; }
-        double minSupport = Math.ceil(minOutlierSupport * outlierItemsets.size());
+        double minSupport = Math.max(Math.ceil(minOutlierSupport * outlierItemsets.size()), 1);
+        //if (minOutlierSupport * outlierItemsets.size() < 1) { return; }
+        //double minSupport = Math.ceil(minOutlierSupport * outlierItemsets.size());
         HashMap<Integer, Double> inlierPaneSingletonCount = new ExactCount().count(inlierItemsets).getCounts();
         // Get new frequent itemsets in outliers
         FPGrowth fpGrowth = new FPGrowth();
@@ -350,6 +351,7 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
         // Add final pane counts to buffer
         inlierItemsetPaneCounts.add(inlierItemsetPaneCount);
         outlierItemsetPaneCounts.add(outlierItemsetPaneCount);
+        System.out.println(outlierItemsetWindowCount.size());
     }
 
     /**
