@@ -1,5 +1,6 @@
 package edu.stanford.futuredata.macrobase.analysis.summary;
 
+import edu.stanford.futuredata.macrobase.analysis.summary.itemset.result.AttributeSet;
 import edu.stanford.futuredata.macrobase.datamodel.DataFrame;
 import edu.stanford.futuredata.macrobase.datamodel.Schema;
 import edu.stanford.futuredata.macrobase.ingest.CSVDataFrameLoader;
@@ -22,7 +23,7 @@ import java.util.*;
 public class SummarizerBench {
     // Increase these numbers for more rigorous, slower performance testing
     static int windowSize = 1000000;
-    static int slideSize = 100000;
+    static int slideSize =  100000;
     private static DataFrame df;
     private static String outlierColumnName = "outlier";
 
@@ -42,7 +43,7 @@ public class SummarizerBench {
         schema.put("distance_gps_km", Schema.ColType.DOUBLE);
         schema.put("battery_drain_rate_per_hour", Schema.ColType.DOUBLE);
         DataFrameLoader loader = new CSVDataFrameLoader(
-                "/lfs/1/krong/cmt.csv"
+                "/data/pbailis/preagg/cmt.csv"
         ).setColumnTypes(schema);
         df = loader.load();
     }
@@ -105,7 +106,8 @@ public class SummarizerBench {
         double totalBatchTime = 0.0;
 
         double startTime = 0.0;
-        while (startTime < df.getNumRows()) {
+        int nRows = df.getNumRows();
+        while (startTime < nRows) {
             double endTime = startTime + miniBatchSize;
             double ls = startTime;
             DataFrame curBatch = df.filter(
@@ -114,38 +116,39 @@ public class SummarizerBench {
             );
             long timerStart = System.currentTimeMillis();
             windowedSummarizer.process(curBatch);
-            Explanation curExplanation = windowedSummarizer
-                    .getResults()
-                    .prune();
-            long timerElapsed = System.currentTimeMillis() - timerStart;
-            totalStreamingTime += timerElapsed;
+            if (endTime >= windowSize) {
+                Explanation curExplanation = windowedSummarizer
+                        .getResults()
+                        .prune();
+                long timerElapsed = System.currentTimeMillis() - timerStart;
+                totalStreamingTime += timerElapsed;
 
-            DataFrame curWindow = df.filter(
-                    "time",
-                    (double t) -> t >= (endTime - windowSize) && t < endTime
-            );
-            timerStart = System.currentTimeMillis();
-            bsumm.process(curWindow);
-            Explanation batchExplanation = bsumm.getResults();
-            timerElapsed = System.currentTimeMillis() - timerStart;
-            totalBatchTime += timerElapsed;
+                DataFrame curWindow = df.filter(
+                        "time",
+                        (double t) -> t >= (endTime - windowSize) && t < endTime
+                );
+                System.gc();
+                timerStart = System.currentTimeMillis();
+                bsumm.process(curWindow);
+                Explanation batchExplanation = bsumm.getResults();
+                timerElapsed = System.currentTimeMillis() - timerStart;
+                totalBatchTime += timerElapsed;
 
-            //  make sure that the known anomalous attribute combination has the highest risk ratio
-//            if (curExplanation.getItemsets().size() > 0) {
-//                AttributeSet streamTopRankedExplanation = curExplanation.getItemsets().get(0);
-//                AttributeSet batchTopRankedExplanation = batchExplanation.getItemsets().get(0);
-//                System.out.println(startTime);
-//                System.out.println(streamTopRankedExplanation);
-//                System.out.println(batchTopRankedExplanation);
-//                System.out.println();
-//            }
-//            if (batchExplanation.getItemsets().size() > 0) {
-//                System.out.println(startTime);
-//                AttributeSet batchTopRankedExplanation = batchExplanation.getItemsets().get(0);
-//                System.out.println(batchTopRankedExplanation);
-//            }
-
+                //  make sure that the known anomalous attribute combination has the highest risk ratio
+//                if (curExplanation.getItemsets().size() > 0) {
+//                    AttributeSet streamTopRankedExplanation = curExplanation.getItemsets().get(0);
+//                    AttributeSet batchTopRankedExplanation = batchExplanation.getItemsets().get(0);
+//                    System.out.println(startTime);
+//                    System.out.println(streamTopRankedExplanation);
+//                    System.out.println(batchTopRankedExplanation);
+//                    System.out.println();
+//                }
+            } else {
+                long timerElapsed = System.currentTimeMillis() - timerStart;
+                totalStreamingTime += timerElapsed;
+            }
             startTime = endTime;
+            System.gc();
         }
 
         System.out.println("Streaming Time: "+totalStreamingTime);
@@ -159,6 +162,7 @@ public class SummarizerBench {
         }
         ingest();
         addTSLabel();
+        System.gc();
         testWindowedPerformance();
     }
 }

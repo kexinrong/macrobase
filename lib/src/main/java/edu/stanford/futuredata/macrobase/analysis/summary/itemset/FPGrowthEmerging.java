@@ -46,6 +46,7 @@ public class FPGrowthEmerging {
                 ret.add(new ItemsetResult(
                         attrOutlierCountEntry.getValue() / outliers.size(),
                         attrOutlierCountEntry.getValue(),
+                        attrInlierCount,
                         ratio,
                         Collections.singleton(item)
                 ));
@@ -140,6 +141,7 @@ public class FPGrowthEmerging {
 
                 ret.add(new ItemsetResult(i.getCount() / (double) outliers.size(),
                                           i.getCount(),
+                                          inlierCount.doubleValue(),
                                           ratio,
                                           i.getItems()));
             } else {
@@ -168,6 +170,7 @@ public class FPGrowthEmerging {
             if (ratio >= minRatio) {
                 ret.add(new ItemsetResult(oc.getCount() / (double) outliers.size(),
                                           oc.getCount(),
+                                          ic.getCount(),
                                           ratio,
                                           oc.getItems()));
             }

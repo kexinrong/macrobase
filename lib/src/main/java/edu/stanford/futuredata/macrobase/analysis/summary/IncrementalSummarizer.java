@@ -3,6 +3,7 @@ package edu.stanford.futuredata.macrobase.analysis.summary;
 import edu.stanford.futuredata.macrobase.analysis.summary.count.ExactCount;
 import edu.stanford.futuredata.macrobase.analysis.summary.itemset.AttributeEncoder;
 import edu.stanford.futuredata.macrobase.analysis.summary.itemset.FPGrowth;
+import edu.stanford.futuredata.macrobase.analysis.summary.itemset.FPGrowthEmerging;
 import edu.stanford.futuredata.macrobase.analysis.summary.itemset.RiskRatio;
 import edu.stanford.futuredata.macrobase.analysis.summary.itemset.result.AttributeSet;
 import edu.stanford.futuredata.macrobase.analysis.summary.itemset.result.ItemsetResult;
@@ -295,13 +296,15 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
     }
 
     /* Helper function that updates internals to keep track of a promoted itemset. */
-    private void trackItemset(Set<Integer> itemset, double count) {
+    private void trackItemset(Set<Integer> itemset, double exposedOutlierCount, double exposedInlierCount) {
         trackingMap.put(itemset, inlierPaneCounts.size() - 1);
-        outlierItemsetWindowCount.put(itemset, count);
-        outlierItemsetPaneCount.put(itemset, count);
+        outlierItemsetWindowCount.put(itemset, exposedOutlierCount);
+        outlierItemsetPaneCount.put(itemset, exposedOutlierCount);
+        inlierItemsetWindowCount.put(itemset, exposedInlierCount);
+        inlierItemsetPaneCount.put(itemset, exposedInlierCount);
     }
 
-    /* This function picks up itemsets that have enough outlier support in the current pane
+    /* This function picks up itemsets that have enough outlier support and risk ratio in the current pane
      * (a.k.a. itemsets that can be promoted) and starts tracking their occurrences in the window.
      *
      * Variables affected:
@@ -311,8 +314,6 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
      */
     private void addNewFrequent() {
         double minSupport = Math.max(Math.ceil(minOutlierSupport * outlierItemsets.size()), 1);
-        //if (minOutlierSupport * outlierItemsets.size() < 1) { return; }
-        //double minSupport = Math.ceil(minOutlierSupport * outlierItemsets.size());
         HashMap<Integer, Double> inlierPaneSingletonCount = new ExactCount().count(inlierItemsets).getCounts();
         // Get new frequent itemsets in outliers
         FPGrowth fpGrowth = new FPGrowth();
@@ -322,17 +323,26 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
         for (ItemsetWithCount iwc : frequent) {
             Set<Integer> itemset = iwc.getItems();
             if (!outlierItemsetWindowCount.containsKey(itemset)) {
-                trackItemset(itemset, iwc.getCount());
                 newFrequent.add(iwc);
             }
         }
         // Get support in the inlier transactions
         List<ItemsetWithCount> inlierCount = fpGrowth.getCounts(
                 inlierItemsets, inlierPaneSingletonCount, inlierPaneSingletonCount.keySet(), newFrequent);
-        for (ItemsetWithCount iwc : inlierCount) {
-            inlierItemsetWindowCount.put(iwc.getItems(), iwc.getCount());
-            inlierItemsetPaneCount.put(iwc.getItems(), iwc.getCount());
+        int count = 0;
+        for (int i = 0; i < newFrequent.size(); i ++) {
+            ItemsetWithCount iiwc = inlierCount.get(i);
+            ItemsetWithCount oiwc = newFrequent.get(i);
+            double exposedInlierCount = iiwc.getCount();
+            double exposedOutlierCount = oiwc.getCount();
+            double rr = RiskRatio.compute(exposedInlierCount, exposedOutlierCount, inlierItemsets.size(), outlierItemsets.size());
+            if (rr >= minRiskRatio) {
+                Set<Integer> itemset = iiwc.getItems();
+                trackItemset(itemset, exposedOutlierCount, exposedInlierCount);
+                count += 1;
+            }
         }
+        //System.out.println(String.format("Pane new itemsets: %d", count));
     }
 
     @Override
@@ -351,7 +361,7 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
         // Add final pane counts to buffer
         inlierItemsetPaneCounts.add(inlierItemsetPaneCount);
         outlierItemsetPaneCounts.add(outlierItemsetPaneCount);
-        System.out.println(outlierItemsetWindowCount.size());
+        //System.out.println(String.format("window itemsets: %d", outlierItemsetWindowCount.size()));
     }
 
     /**
@@ -377,6 +387,7 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
                 ItemsetResult result = new ItemsetResult(
                         outlierItemsetWindowCount.get(itemset) / outlierSupport,
                         outlierItemsetWindowCount.get(itemset),
+                        inlierItemsetWindowCount.get(itemset),
                         rr,
                         itemset);
                 attributeSets.add(new AttributeSet(result, encoder));

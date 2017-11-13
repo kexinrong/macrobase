@@ -82,7 +82,7 @@ public class WindowedOperator<O>
         ArrayList<DataFrame> newPanes = new ArrayList<>(1);
 
         // Assuming in order arrival, break up incoming batch into panes
-        while (maxInputTime >= maxWindowTime + slideLength) {
+        while (maxInputTime >= maxWindowTime + slideLength - 1) {
             // When we fill up a pane, split off the overflow from the current batch
             double nextWindowEnd = maxWindowTime + slideLength;
             DataFrame earlyInput = restInput.filter(timeColumn, (double t) -> t < nextWindowEnd);

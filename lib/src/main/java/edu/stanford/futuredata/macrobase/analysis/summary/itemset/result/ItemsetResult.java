@@ -5,15 +5,18 @@ import java.util.Set;
 public class ItemsetResult {
     private double support;
     private double numRecords;
+    private double inlierCount;
     private double ratioToInliers;
     private Set<Integer> items;
 
     public ItemsetResult(double support,
                          double numRecords,
+                         double inlierCount,
                          double ratioToInliers,
                          Set<Integer> items) {
         this.support = support;
         this.numRecords = numRecords;
+        this.inlierCount = inlierCount;
         this.ratioToInliers = ratioToInliers;
         this.items = items;
     }
@@ -25,6 +28,8 @@ public class ItemsetResult {
     public double getNumRecords() {
         return numRecords;
     }
+
+    public double getInlierCount() { return inlierCount; }
 
     public double getRatioToInliers() {
         return ratioToInliers;
