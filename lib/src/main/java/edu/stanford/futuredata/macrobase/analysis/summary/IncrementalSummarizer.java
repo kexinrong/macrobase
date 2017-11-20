@@ -361,7 +361,8 @@ public class IncrementalSummarizer implements IncrementalOperator<Explanation> {
         // Add final pane counts to buffer
         inlierItemsetPaneCounts.add(inlierItemsetPaneCount);
         outlierItemsetPaneCounts.add(outlierItemsetPaneCount);
-        //System.out.println(String.format("window itemsets: %d", outlierItemsetWindowCount.size()));
+//        System.out.println(String.format("outlier itemsets: %d, tracking itemsets: %d",
+//                outlierItemsets.size(), outlierItemsetPaneCount.size()));
     }
 
     /**

@@ -26,6 +26,14 @@ public class SummarizerBench {
     static int slideSize =  100000;
     private static DataFrame df;
     private static String outlierColumnName = "outlier";
+    private static List<String> explanationAttributes = Arrays.asList(
+            "build_version",
+            "app_version",
+            "deviceid",
+            "hardware_carrier",
+            "state",
+            "hardware_model"
+    );
 
     public static void ingest() throws Exception {
         Map<String, Schema.ColType> schema = new HashMap<>();
@@ -76,16 +84,6 @@ public class SummarizerBench {
     }
 
     public static void testWindowedPerformance() throws Exception {
-
-        List<String> explanationAttributes = Arrays.asList(
-                "build_version",
-                "app_version",
-                "deviceid",
-                "hardware_carrier",
-                "state",
-                "hardware_model"
-        );
-
         IncrementalSummarizer outlierSummarizer = new IncrementalSummarizer();
         outlierSummarizer.setAttributes(explanationAttributes);
         outlierSummarizer.setOutlierColumn(outlierColumnName);
@@ -110,28 +108,28 @@ public class SummarizerBench {
         while (startTime < nRows) {
             double endTime = startTime + miniBatchSize;
             double ls = startTime;
-            DataFrame curBatch = df.filter(
-                    "time",
-                    (double t) -> t >= ls && t < endTime
-            );
-            long timerStart = System.currentTimeMillis();
-            windowedSummarizer.process(curBatch);
+//            DataFrame curBatch = df.filter(
+//                    "time",
+//                    (double t) -> t >= ls && t < endTime
+//            );
+//            long timerStart = System.currentTimeMillis();
+//            windowedSummarizer.process(curBatch);
             if (endTime >= windowSize) {
-                Explanation curExplanation = windowedSummarizer
-                        .getResults()
-                        .prune();
-                long timerElapsed = System.currentTimeMillis() - timerStart;
-                totalStreamingTime += timerElapsed;
+//                Explanation curExplanation = windowedSummarizer
+//                        .getResults()
+//                        .prune();
+//                long timerElapsed = System.currentTimeMillis() - timerStart;
+//                totalStreamingTime += timerElapsed;
 
                 DataFrame curWindow = df.filter(
                         "time",
                         (double t) -> t >= (endTime - windowSize) && t < endTime
                 );
                 System.gc();
-                timerStart = System.currentTimeMillis();
+                long timerStart = System.currentTimeMillis();
                 bsumm.process(curWindow);
                 Explanation batchExplanation = bsumm.getResults();
-                timerElapsed = System.currentTimeMillis() - timerStart;
+                long timerElapsed = System.currentTimeMillis() - timerStart;
                 totalBatchTime += timerElapsed;
 
                 //  make sure that the known anomalous attribute combination has the highest risk ratio
@@ -143,14 +141,16 @@ public class SummarizerBench {
 //                    System.out.println(batchTopRankedExplanation);
 //                    System.out.println();
 //                }
-            } else {
-                long timerElapsed = System.currentTimeMillis() - timerStart;
-                totalStreamingTime += timerElapsed;
+//            } else {
+//                long timerElapsed = System.currentTimeMillis() - timerStart;
+//                totalStreamingTime += timerElapsed;
+//            }
+
             }
             startTime = endTime;
-            System.gc();
         }
 
+        System.out.println(String.format("window size: %d, slide size: %d", windowSize, slideSize));
         System.out.println("Streaming Time: "+totalStreamingTime);
         System.out.println("Batch Time: "+totalBatchTime);
     }
@@ -162,7 +162,25 @@ public class SummarizerBench {
         }
         ingest();
         addTSLabel();
-        System.gc();
-        testWindowedPerformance();
+//        int[] slides = {200000, 100000, 50000, 25000, 12500};
+//        int[] slides = {90000, 80000, 75000, 70000, 60000, 50000, 45000, 40000, 30000};
+//
+//        for (int i = 0; i < 3; i ++ ){
+//            for (int slide : slides) {
+//                slideSize = slide;
+//                System.gc();
+//                testWindowedPerformance();
+//            }
+//        }
+
+        int[] windows = {8000000, 4000000, 2000000, 1000000, 500000};
+        slideSize = 50000;
+        for (int i = 0; i < 3; i ++ ){
+            for (int window : windows) {
+                windowSize = window;
+                testWindowedPerformance();
+            }
+        }
+
     }
 }
