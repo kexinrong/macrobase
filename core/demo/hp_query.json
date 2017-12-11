@@ -1,0 +1,17 @@
+{
+  "pipeline": "BasicBatchPipeline",
+  "inputURI": "csv:///Users/kexinrong/Dropbox/macrobase-hyperpilot-shared-datasets/snapaverage_intel_docker_stats_cgroups_memory_stats_cache.csv",
+
+  "classifier": "percentile",
+  "metric": "value",
+  "cutoff": 1.0,
+  "includeHi": true,
+  "includeLo": false,
+
+  "summarizer": "apriori",
+  "attributes": ["app", "deploymentId", "docker_id",
+    "io.kubernetes.container.name", "io.kubernetes.docker.type",
+    "io.kubernetes.pod.name", "nodename"],
+  "minRatioMetric": 3.0,
+  "minSupport": 0.1
+}
